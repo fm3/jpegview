@@ -107,8 +107,8 @@ void CEXIFDisplay::SetGPSLocation(LPCTSTR sLocation, LPCTSTR sURL) {
 	pLinkLocation->SetShow(true, false);
 }
 
-void CEXIFDisplay::AddLine(LPCTSTR sDescription, LPCTSTR sValue, bool valueIsURL) {
-	m_lines.push_back(TextLine(CopyStrAlloc(sDescription), CopyStrAlloc(sValue), valueIsURL));
+void CEXIFDisplay::AddLine(LPCTSTR sDescription, LPCTSTR sValue, bool valueIsURL, bool sameLine) {
+	m_lines.push_back(TextLine(CopyStrAlloc(sDescription), CopyStrAlloc(sValue), valueIsURL, sameLine && !m_bShowHistogram));
 }
 
 void CEXIFDisplay::AddLine(LPCTSTR sDescription, double dValue, int nDigits) {
@@ -203,7 +203,11 @@ CRect CEXIFDisplay::PanelRect() {
 
 		int nLen1 = 0, nLen2 = 0;
 		std::list<TextLine>::iterator iter;
+		int nLineCountExcludingSameLineLines = 0;
 		for (iter = m_lines.begin( ); iter != m_lines.end( ); iter++ ) {
+			if (!(iter->SameLine)) {
+				nLineCountExcludingSameLineLines += 1;
+			}
 			if (iter->Desc != NULL && m_bShowHistogram) {
 				::GetTextExtentPoint32(dc, iter->Desc, (int)_tcslen(iter->Desc), &size);
 				m_nLineHeight = max(m_nLineHeight, size.cy);
@@ -228,8 +232,10 @@ CRect CEXIFDisplay::PanelRect() {
 			nExpansionY = HelpersGUI::ScaleToScreen(HISTOGRAM_HEIGHT) + m_nGap;
 		}
 
+
+
 		m_size = CSize(nNeededWidthNoBorders + m_nGap*2 + nExpansionX, 
-			m_nTitleHeight + (int)m_lines.size()*m_nLineHeight + m_nGap * 2 + nExpansionY);
+			m_nTitleHeight + nLineCountExcludingSameLineLines*m_nLineHeight + m_nGap * 2 + nExpansionY);
 
 		if (m_sComment != NULL) {
 			CRect rectComment(0, 0, m_size.cx - m_nGap*2, HelpersGUI::ScaleToScreen(200));
@@ -294,6 +300,9 @@ void CEXIFDisplay::OnPaint(CDC & dc, const CPoint& offset) {
 
 	std::list<TextLine>::iterator iter;
 	for (iter = m_lines.begin( ); iter != m_lines.end( ); iter++ ) {
+		if (iter->SameLine) {
+			nRunningY -= m_nLineHeight;
+		}
 		if (iter->Desc != NULL && m_bShowHistogram) {
 			::TextOut(dc, nX + m_nGap, nRunningY, iter->Desc, (int)_tcslen(iter->Desc));
 		}

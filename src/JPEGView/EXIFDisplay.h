@@ -25,7 +25,7 @@ public:
 	void AddTitle(LPCTSTR sTitle);
 	void SetComment(LPCTSTR sComment);
 	void SetGPSLocation(LPCTSTR sLocation, LPCTSTR sURL);
-	void AddLine(LPCTSTR sDescription, LPCTSTR sValue, bool valueIsURL = false);
+	void AddLine(LPCTSTR sDescription, LPCTSTR sValue, bool valueIsURL = false, bool sameLine = false);
 	void AddLine(LPCTSTR sDescription, double dValue, int nDigits);
 	void AddLine(LPCTSTR sDescription, int nValue);
 	void AddLine(LPCTSTR sDescription, const SYSTEMTIME &time); // time is in local time
@@ -49,15 +49,17 @@ protected:
 private:
 
 	struct TextLine {
-		TextLine(LPCTSTR desc, LPCTSTR value, bool valueIsURL = false) {
+		TextLine(LPCTSTR desc, LPCTSTR value, bool valueIsURL = false, bool sameLine = false) {
 			Desc = desc;
 			Value = value;
 			ValueIsURL = valueIsURL;
+			SameLine = sameLine;
 		}
 
 		LPCTSTR Desc;
 		LPCTSTR Value;
 		bool ValueIsURL;
+		bool SameLine;
 	};
 
 	bool m_bShowHistogram;
