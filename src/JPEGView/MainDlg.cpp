@@ -396,7 +396,7 @@ LRESULT CMainDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam
 	if (!m_bFullScreenMode) {
 		// Window mode, set correct window size
 		SetCurrentWindowStyle();
-		if (!IsAdjustWindowToImage()) {
+		if (!IsAdjustWindowToImage() && !sp.DefaultMaximized()) {
 			CRect windowRect = CMultiMonitorSupport::GetDefaultWindowRect();
 			this->SetWindowPos(HWND_TOP, windowRect.left, windowRect.top, windowRect.Width(), windowRect.Height(), SWP_NOZORDER | SWP_NOCOPYBITS);
 		} else {
@@ -1766,7 +1766,12 @@ void CMainDlg::ExecuteCommand(int nCommand) {
 						CSize(MIN_WND_WIDTH, MIN_WND_HEIGHT),
 						defaultWindowRect.Size(),
 						dZoom, m_pCurrentImage, false, true, m_bWindowBorderless);
-				this->SetWindowPos(HWND_TOP, windowRect.left, windowRect.top, windowRect.Width(), windowRect.Height(), SWP_NOZORDER | SWP_NOCOPYBITS);
+				if (sp.DefaultMaximized()) {
+					this->ShowWindow(SW_MAXIMIZE);
+				}
+				else {
+					this->SetWindowPos(HWND_TOP, windowRect.left, windowRect.top, windowRect.Width(), windowRect.Height(), SWP_NOZORDER | SWP_NOCOPYBITS);
+				}
 				this->MouseOn();
 				m_bSpanVirtualDesktop = false;
 			} else {

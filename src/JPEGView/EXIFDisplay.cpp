@@ -28,7 +28,7 @@ static CRect InflateRect(const CRect& rect, float fAmount) {
 	return r;
 }
 
-CEXIFDisplay::CEXIFDisplay(HWND hWnd, INotifiyMouseCapture* pNotifyMouseCapture) : CPanel(hWnd, pNotifyMouseCapture, true, true) {
+CEXIFDisplay::CEXIFDisplay(HWND hWnd, INotifiyMouseCapture* pNotifyMouseCapture) : CPanel(hWnd, pNotifyMouseCapture, false, true) {
 	m_bShowHistogram = false;
 	m_nGap = (int)(m_fDPIScale * 10);
 	m_nTab1 = 0;
@@ -44,8 +44,10 @@ CEXIFDisplay::CEXIFDisplay(HWND hWnd, INotifiyMouseCapture* pNotifyMouseCapture)
 	m_nNoHistogramSize = CSize(0, 0);
 	m_pHistogram = NULL;
 
-	AddUserPaintButton(ID_btnShowHideHistogram, &ShowHistogramTooltip, &PaintShowHistogramBtn, NULL, this, this);
-	AddUserPaintButton(ID_btnClose, CNLS::GetString(_T("Close")), &PaintCloseBtn, NULL, this, this);
+	LPCTSTR nullTooltip = NULL; // Needed because passing NULL directly to overloaded function makes it ambiguous
+
+	AddUserPaintButton(ID_btnShowHideHistogram, nullTooltip, &PaintShowHistogramBtn, NULL, this, this);
+	AddUserPaintButton(ID_btnClose, nullTooltip, &PaintCloseBtn, NULL, this, this);
 	CURLCtrl* pLinkLocation = AddURL(ID_urlLocation, _T(""), _T(""), false);
 	pLinkLocation->SetShow(false, false);
 }
@@ -202,7 +204,7 @@ CRect CEXIFDisplay::PanelRect() {
 		int nLen1 = 0, nLen2 = 0;
 		std::list<TextLine>::iterator iter;
 		for (iter = m_lines.begin( ); iter != m_lines.end( ); iter++ ) {
-			if (iter->Desc != NULL) {
+			if (iter->Desc != NULL && m_bShowHistogram) {
 				::GetTextExtentPoint32(dc, iter->Desc, (int)_tcslen(iter->Desc), &size);
 				m_nLineHeight = max(m_nLineHeight, size.cy);
 				nMaxLength1 = max(nMaxLength1, size.cx);
@@ -218,7 +220,7 @@ CRect CEXIFDisplay::PanelRect() {
 		}
 
 		int nButtonWidth = (int)(m_fDPIScale * BUTTON_SIZE);
-		bool bNeedsExpansionForButton = (nMaxLength2 - max(nLen1, nLen2)) < nButtonWidth + m_nGap;
+		bool bNeedsExpansionForButton = (m_bShowHistogram) && (nMaxLength2 - max(nLen1, nLen2)) < nButtonWidth + m_nGap;
 		int nNeededWidthNoBorders = max(nTitleLength, nMaxLength1 + nMaxLength2 + m_nGap) + (bNeedsExpansionForButton ? m_nGap + nButtonWidth : 0);
 		int nExpansionX = 0, nExpansionY = 0;
 		if (m_bShowHistogram) {
@@ -238,6 +240,9 @@ CRect CEXIFDisplay::PanelRect() {
 
 		m_nNoHistogramSize = CSize(m_size.cx - nExpansionX, m_size.cy - nExpansionY);
 		m_nTab1 = nMaxLength1 + m_nGap;
+		if (!m_bShowHistogram) {
+			m_nTab1 = 0;
+		}
 	}
 	return CRect(m_pos, m_size);
 }
@@ -289,7 +294,7 @@ void CEXIFDisplay::OnPaint(CDC & dc, const CPoint& offset) {
 
 	std::list<TextLine>::iterator iter;
 	for (iter = m_lines.begin( ); iter != m_lines.end( ); iter++ ) {
-		if (iter->Desc != NULL) {
+		if (iter->Desc != NULL && m_bShowHistogram) {
 			::TextOut(dc, nX + m_nGap, nRunningY, iter->Desc, (int)_tcslen(iter->Desc));
 		}
 		if (iter->Value != NULL) {
