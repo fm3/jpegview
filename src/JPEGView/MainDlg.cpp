@@ -647,6 +647,7 @@ void CMainDlg::BlendBlackRect(CDC & targetDC, CPanel& panel, float fBlendFactor)
 
 void CMainDlg::DisplayErrors(CJPEGImage* pCurrentImage, const CRect& clientRect, CDC& dc) {
 	dc.SetTextColor(CSettingsProvider::This().ColorGUI());
+	HelpersGUI::SelectDefaultGUIFont(dc);
 	if (m_sStartupFile.IsEmpty() && m_pCurrentImage == NULL) {
 		CRect rectText(0, clientRect.Height()/2 - HelpersGUI::ScaleToScreen(40), clientRect.Width(), clientRect.Height());
 		if (m_isBeforeFileSelected) {
@@ -1175,7 +1176,7 @@ LRESULT CMainDlg::OnContextMenu(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam,
 	HMENU hMenuModDate = ::GetSubMenu(hMenuTrackPopup, SUBMENU_POS_MODDATE);
 	HMENU hMenuUserCommands = ::GetSubMenu(hMenuTrackPopup, SUBMENU_POS_USER_COMMANDS);
 	HMENU hMenuOpenWithCommands = ::GetSubMenu(hMenuTrackPopup, SUBMENU_POS_OPENWITH);
-	HMENU hMenuWallpaper = ::GetSubMenu(hMenuTrackPopup, SUBMENU_POS_WALLPAPER);
+	// HMENU hMenuWallpaper = ::GetSubMenu(hMenuTrackPopup, SUBMENU_POS_WALLPAPER);
 
 	if (!HelpersGUI::CreateUserCommandsMenu(hMenuUserCommands)) {
 		::DeleteMenu(hMenuTrackPopup, SUBMENU_POS_USER_COMMANDS + 1, MF_BYPOSITION);
@@ -1225,7 +1226,7 @@ LRESULT CMainDlg::OnContextMenu(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam,
 		::EnableMenuItem(hMenuTrackPopup, SUBMENU_POS_ZOOM, MF_BYPOSITION  | MF_GRAYED);
 		::EnableMenuItem(hMenuTrackPopup, SUBMENU_POS_MODDATE, MF_BYPOSITION  | MF_GRAYED);
 		::EnableMenuItem(hMenuTrackPopup, SUBMENU_POS_TRANSFORM, MF_BYPOSITION  | MF_GRAYED);
-		::EnableMenuItem(hMenuTrackPopup, SUBMENU_POS_WALLPAPER, MF_BYPOSITION | MF_GRAYED);
+		// ::EnableMenuItem(hMenuTrackPopup, SUBMENU_POS_WALLPAPER, MF_BYPOSITION | MF_GRAYED);
 	} else {
 		if (m_bKeepParams || m_pCurrentImage->IsClipboardImage() ||
 			CParameterDB::This().FindEntry(m_pCurrentImage->GetPixelHash()) == NULL)
@@ -1242,11 +1243,11 @@ LRESULT CMainDlg::OnContextMenu(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam,
 			::EnableMenuItem(hMenuModDate, IDM_TOUCH_IMAGE_EXIF, MF_BYCOMMAND | MF_GRAYED);
 		}
 		int windowsVersion = Helpers::GetWindowsVersion();
-		if (m_pCurrentImage->IsClipboardImage() || (windowsVersion < 600 && m_pCurrentImage->GetImageFormat() != IF_WindowsBMP) || 
+		/*if (m_pCurrentImage->IsClipboardImage() || (windowsVersion < 600 && m_pCurrentImage->GetImageFormat() != IF_WindowsBMP) ||
 			(windowsVersion < 602 && !(m_pCurrentImage->GetImageFormat() == IF_WindowsBMP || m_pCurrentImage->GetImageFormat() == IF_JPEG)) ||
 			!m_pCurrentImage->IsGDIPlusFormat()) {
 			::EnableMenuItem(hMenuWallpaper, IDM_SET_WALLPAPER_ORIG, MF_BYCOMMAND | MF_GRAYED);
-		}
+		}*/
 	}
 	if (!HelpersGUI::CreateOpenWithCommandsMenu(hMenuOpenWithCommands) || m_pCurrentImage == NULL) {
 		::DeleteMenu(hMenuTrackPopup, SUBMENU_POS_OPENWITH, MF_BYPOSITION);
@@ -1264,22 +1265,13 @@ LRESULT CMainDlg::OnContextMenu(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam,
 		::DeleteMenu(hMenuTrackPopup, 0, MF_BYPOSITION);
 		::DeleteMenu(hMenuTrackPopup, 0, MF_BYPOSITION);
 	}
-
 	// Hide some menus I never use
 	::DeleteMenu(hMenuTrackPopup, IDM_PRINT, MF_BYCOMMAND);
 	::DeleteMenu(hMenuTrackPopup, IDM_SET_WALLPAPER_ORIG, MF_BYCOMMAND);
 	::DeleteMenu(hMenuTrackPopup, IDM_SET_WALLPAPER_DISPLAY, MF_BYCOMMAND);
-	::DeleteMenu(hMenuTrackPopup, IDM_BATCH_COPY, MF_BYCOMMAND);
-	::DeleteMenu(hMenuTrackPopup, IDM_COPY, MF_BYCOMMAND);
+	::DeleteMenu(hMenuTrackPopup, IDM_UPDATE_USER_CONFIG, MF_BYCOMMAND);
 	::DeleteMenu(hMenuTrackPopup, IDM_SHOW_FILENAME, MF_BYCOMMAND);
-	::DeleteMenu(hMenuTrackPopup, IDM_PASTE, MF_BYCOMMAND);
-	::DeleteMenu(hMenuTrackPopup, IDM_AUTO_CORRECTION, MF_BYCOMMAND);
-	::DeleteMenu(hMenuTrackPopup, IDM_LDC, MF_BYCOMMAND);
-	::DeleteMenu(hMenuTrackPopup, IDM_KEEP_PARAMETERS, MF_BYCOMMAND);
-	::DeleteMenu(hMenuTrackPopup, IDM_SAVE_PARAMETERS, MF_BYCOMMAND);
-	::DeleteMenu(hMenuTrackPopup, IDM_SAVE_PARAM_DB, MF_BYCOMMAND);
-	::DeleteMenu(hMenuTrackPopup, IDM_CLEAR_PARAM_DB, MF_BYCOMMAND);
-	
+	::DeleteMenu(hMenuTrackPopup, IDM_SHOW_NAVPANEL, MF_BYCOMMAND);
 
 	int nMenuCmd = TrackPopupMenu(CPoint(nX, nY), hMenuTrackPopup);
 	ExecuteCommand(nMenuCmd);

@@ -275,182 +275,193 @@ POPUPMENU MENU
 BEGIN
     POPUP "PopupMenu"
     BEGIN
-        MENUITEM "Stop slide show/movie\t0xff", IDM_STOP_MOVIE
+        MENUITEM "Stop slideshow\t0xff", IDM_STOP_MOVIE
         MENUITEM SEPARATOR
-        MENUITEM "Open image...",               IDM_OPEN
-        POPUP "Open image with"
+        POPUP "Open with"
         BEGIN
-            MENUITEM "_empty_",                     IDM_ABOUT
+        MENUITEM "_empty_", IDM_ABOUT
         END
-        MENUITEM "Save processed image...\t0x5de", IDM_SAVE
-        MENUITEM "Reload image",                IDM_RELOAD
-        MENUITEM "Open containing folder in Explorer", IDM_EXPLORE
-        MENUITEM "Print image...",              IDM_PRINT
-        MENUITEM "Batch rename/copy...",        IDM_BATCH_COPY
-        POPUP "Set modification date"
+        MENUITEM "Image info", IDM_SHOW_FILEINFO
+        MENUITEM "Show in Explorer", IDM_EXPLORE
+        MENUITEM SEPARATOR
+        MENUITEM "Print image...",              IDM_PRINT //HIDDEN
+        // POPUP "Set as desktop wallpaper"
+        // BEGIN
+        //     MENUITEM "Use original image",          IDM_SET_WALLPAPER_ORIG
+        //     MENUITEM "Use processed image as displayed", IDM_SET_WALLPAPER_DISPLAY
+        // END
+        POPUP "Copy / Paste"
         BEGIN
-            MENUITEM "to current date",             IDM_TOUCH_IMAGE
-            MENUITEM "to EXIF date",                IDM_TOUCH_IMAGE_EXIF
-            MENUITEM "to EXIF date (all files in folder)", IDM_TOUCH_IMAGE_EXIF_FOLDER
+            MENUITEM "Copy full size image", IDM_COPY_FULL
+            MENUITEM "Copy current size image", IDM_COPY
+            MENUITEM "Copy file path", IDM_COPY_PATH
+            MENUITEM SEPARATOR
+            MENUITEM "Paste from clipboard", IDM_PASTE
         END
-        POPUP "Set as desktop wallpaper"
-        BEGIN
-            MENUITEM "Use original image",          IDM_SET_WALLPAPER_ORIG
-            MENUITEM "Use processed image as displayed", IDM_SET_WALLPAPER_DISPLAY
-        END
-        MENUITEM SEPARATOR
-        MENUITEM "Copy to clipboard",           IDM_COPY
-        MENUITEM "Copy original size image",    IDM_COPY_FULL
-        MENUITEM "Copy file path",              IDM_COPY_PATH
-        MENUITEM "Paste from clipboard",        IDM_PASTE
-        MENUITEM SEPARATOR
-        MENUITEM "Show picture info (EXIF)",    IDM_SHOW_FILEINFO
-        MENUITEM "Show filename",               IDM_SHOW_FILENAME
-        MENUITEM "Show navigation panel",       IDM_SHOW_NAVPANEL
-        MENUITEM SEPARATOR
-        MENUITEM "Next image",                  IDM_NEXT
-        MENUITEM "Previous image",              IDM_PREV
+        MENUITEM "Show filename",               IDM_SHOW_FILENAME // HIDDEN
+        MENUITEM "Show navigation panel",       IDM_SHOW_NAVPANEL // HIDDEN
         POPUP "Navigation"
         BEGIN
-            MENUITEM "Loop folder",                 IDM_LOOP_FOLDER
-            MENUITEM "Loop recursively",            IDM_LOOP_RECURSIVELY
-            MENUITEM "Loop siblings",               IDM_LOOP_SIBLINGS
-        END
-        POPUP "Display order"
-        BEGIN
-            MENUITEM "Modification date",           IDM_SORT_MOD_DATE
-            MENUITEM "Creation date",               IDM_SORT_CREATION_DATE
-            MENUITEM "File name",                   IDM_SORT_NAME
-            MENUITEM "File size",                   IDM_SORT_SIZE
-            MENUITEM "Random",                      IDM_SORT_RANDOM
+            MENUITEM "Next image", IDM_NEXT
+            MENUITEM "Previous image", IDM_PREV
             MENUITEM SEPARATOR
-            MENUITEM "Ascending",                   IDM_SORT_ASCENDING
-            MENUITEM "Descending",                  IDM_SORT_DESCENDING
-        END
-        POPUP "Play folder as slideshow/movie"
-        BEGIN
-            MENUITEM "Slideshow",                   IDM_SLIDESHOW_START
-            MENUITEM "Waiting time\t1 sec",         IDM_SLIDESHOW_1
-            MENUITEM "Waiting time\t2 sec",         IDM_SLIDESHOW_2
-            MENUITEM "Waiting time\t3 sec",         IDM_SLIDESHOW_3
-            MENUITEM "Waiting time\t4 sec",         IDM_SLIDESHOW_4
-            MENUITEM "Waiting time\t5 sec",         IDM_SLIDESHOW_5
-            MENUITEM "Waiting time\t7 sec",         IDM_SLIDESHOW_7
-            MENUITEM "Waiting time\t10 sec",        IDM_SLIDESHOW_10
-            MENUITEM "Waiting time\t20 sec",        IDM_SLIDESHOW_20
-            POPUP "Transition Effect"
+            MENUITEM "Open image...", IDM_OPEN
+            MENUITEM "Reload image", IDM_RELOAD
+            MENUITEM SEPARATOR
+            POPUP "Loop"
             BEGIN
-                MENUITEM "None",                        IDM_EFFECT_NONE
-                MENUITEM SEPARATOR
-                MENUITEM "Blend",                       IDM_EFFECT_BLEND
-                MENUITEM SEPARATOR
-                MENUITEM "Slide from right",            IDM_EFFECT_SLIDE_RL
-                MENUITEM "Slide from left",             IDM_EFFECT_SLIDE_LR
-                MENUITEM "Slide from top",              IDM_EFFECT_SLIDE_TB
-                MENUITEM "Slide from bottom",           IDM_EFFECT_SLIDE_BT
-                MENUITEM SEPARATOR
-                MENUITEM "Roll from right",             IDM_EFFECT_ROLL_RL
-                MENUITEM "Roll from left",              IDM_EFFECT_ROLL_LR
-                MENUITEM "Roll from top",               IDM_EFFECT_ROLL_TB
-                MENUITEM "Roll from bottom",            IDM_EFFECT_ROLL_BT
-                MENUITEM SEPARATOR
-                MENUITEM "Scroll from right",           IDM_EFFECT_SCROLL_RL
-                MENUITEM "Scroll from left",            IDM_EFFECT_SCROLL_LR
-                MENUITEM "Scroll from top",             IDM_EFFECT_SCROLL_TB
-                MENUITEM "Scroll from bottom",          IDM_EFFECT_SCROLL_BT
+                MENUITEM "Loop folder", IDM_LOOP_FOLDER
+                MENUITEM "Loop recursively", IDM_LOOP_RECURSIVELY
+                MENUITEM "Loop siblings", IDM_LOOP_SIBLINGS
             END
-            POPUP "Transition Speed"
+            POPUP "Display order"
             BEGIN
-                MENUITEM "Very fast",                   IDM_EFFECTTIME_VERY_FAST
-                MENUITEM "Fast",                        IDM_EFFECTTIME_FAST
-                MENUITEM "Normal",                      IDM_EFFECTTIME_NORMAL
-                MENUITEM "Slow",                        IDM_EFFECTTIME_SLOW
-                MENUITEM "Very slow",                   IDM_EFFECTTIME_VERY_SLOW
+                MENUITEM "Modification date", IDM_SORT_MOD_DATE
+                MENUITEM "Creation date", IDM_SORT_CREATION_DATE
+                MENUITEM "File name", IDM_SORT_NAME
+                MENUITEM "File size", IDM_SORT_SIZE
+                MENUITEM "Random", IDM_SORT_RANDOM
+                MENUITEM SEPARATOR
+                MENUITEM "Ascending", IDM_SORT_ASCENDING
+                MENUITEM "Descending", IDM_SORT_DESCENDING
             END
-            MENUITEM SEPARATOR
-            MENUITEM "Movie",                           IDM_MOVIE_START_FPS
-            MENUITEM "Playback speed\t5 fps",           IDM_MOVIE_5_FPS
-            MENUITEM "Playback speed\t10 fps",          IDM_MOVIE_10_FPS
-            MENUITEM "Playback speed\t25 fps",          IDM_MOVIE_25_FPS
-            MENUITEM "Playback speed\t30 fps",          IDM_MOVIE_30_FPS
-            MENUITEM "Playback speed\t50 fps",          IDM_MOVIE_50_FPS
-            MENUITEM "Playback speed\t100 fps",         IDM_MOVIE_100_FPS
+            POPUP "Slideshow"
+                BEGIN
+                MENUITEM "Slideshow", IDM_SLIDESHOW_START
+                MENUITEM "Waiting time\t1 sec", IDM_SLIDESHOW_1
+                MENUITEM "Waiting time\t2 sec", IDM_SLIDESHOW_2
+                MENUITEM "Waiting time\t3 sec", IDM_SLIDESHOW_3
+                MENUITEM "Waiting time\t4 sec", IDM_SLIDESHOW_4
+                MENUITEM "Waiting time\t5 sec", IDM_SLIDESHOW_5
+                MENUITEM "Waiting time\t7 sec", IDM_SLIDESHOW_7
+                MENUITEM "Waiting time\t10 sec", IDM_SLIDESHOW_10
+                MENUITEM "Waiting time\t20 sec", IDM_SLIDESHOW_20
+                POPUP "Transition Effect"
+                BEGIN
+                    MENUITEM "None", IDM_EFFECT_NONE
+                    MENUITEM SEPARATOR
+                    MENUITEM "Blend", IDM_EFFECT_BLEND
+                    MENUITEM SEPARATOR
+                    MENUITEM "Slide from right", IDM_EFFECT_SLIDE_RL
+                    MENUITEM "Slide from left", IDM_EFFECT_SLIDE_LR
+                    MENUITEM "Slide from top", IDM_EFFECT_SLIDE_TB
+                    MENUITEM "Slide from bottom", IDM_EFFECT_SLIDE_BT
+                    MENUITEM SEPARATOR
+                    MENUITEM "Roll from right", IDM_EFFECT_ROLL_RL
+                    MENUITEM "Roll from left", IDM_EFFECT_ROLL_LR
+                    MENUITEM "Roll from top", IDM_EFFECT_ROLL_TB
+                    MENUITEM "Roll from bottom", IDM_EFFECT_ROLL_BT
+                    MENUITEM SEPARATOR
+                    MENUITEM "Scroll from right", IDM_EFFECT_SCROLL_RL
+                    MENUITEM "Scroll from left", IDM_EFFECT_SCROLL_LR
+                    MENUITEM "Scroll from top", IDM_EFFECT_SCROLL_TB
+                    MENUITEM "Scroll from bottom", IDM_EFFECT_SCROLL_BT
+                END
+                POPUP "Transition Speed"
+                BEGIN
+                    MENUITEM "Very fast", IDM_EFFECTTIME_VERY_FAST
+                    MENUITEM "Fast", IDM_EFFECTTIME_FAST
+                    MENUITEM "Normal", IDM_EFFECTTIME_NORMAL
+                    MENUITEM "Slow", IDM_EFFECTTIME_SLOW
+                    MENUITEM "Very slow", IDM_EFFECTTIME_VERY_SLOW
+                END
+                MENUITEM SEPARATOR
+                MENUITEM "Movie", IDM_MOVIE_START_FPS
+                MENUITEM "Playback speed\t5 fps", IDM_MOVIE_5_FPS
+                MENUITEM "Playback speed\t10 fps", IDM_MOVIE_10_FPS
+                MENUITEM "Playback speed\t25 fps", IDM_MOVIE_25_FPS
+                MENUITEM "Playback speed\t30 fps", IDM_MOVIE_30_FPS
+                MENUITEM "Playback speed\t50 fps", IDM_MOVIE_50_FPS
+                MENUITEM "Playback speed\t100 fps", IDM_MOVIE_100_FPS
+            END
         END
-        MENUITEM SEPARATOR
-        POPUP "Transform image"
-        BEGIN
-            MENUITEM "Rotate +90",                  IDM_ROTATE_90
-            MENUITEM "Rotate -90",                  IDM_ROTATE_270
-            MENUITEM "Rotate...",                   IDM_ROTATE
-            MENUITEM "Change size...",              IDM_CHANGESIZE
-            MENUITEM "Perspective correction...",   IDM_PERSPECTIVE
-            MENUITEM SEPARATOR
-            MENUITEM "Mirror horizontally",         IDM_MIRROR_H
-            MENUITEM "Mirror vertically",           IDM_MIRROR_V
-        END
-        POPUP "Lossless JPEG transformations"
-        BEGIN
-            MENUITEM "Rotate +90\t0x24B9",          IDM_ROTATE_90_LOSSLESS
-            MENUITEM "Rotate -90\t0x24C3",          IDM_ROTATE_270_LOSSLESS
-            MENUITEM "Rotate 180",                  IDM_ROTATE_180_LOSSLESS
-            MENUITEM SEPARATOR
-            MENUITEM "Mirror horizontally",         IDM_MIRROR_H_LOSSLESS
-            MENUITEM "Mirror vertically",           IDM_MIRROR_V_LOSSLESS
-        END
-        MENUITEM "Auto correction",             IDM_AUTO_CORRECTION
-        MENUITEM "Local density correction",    IDM_LDC
-        MENUITEM "Keep parameters",             IDM_KEEP_PARAMETERS
-        MENUITEM SEPARATOR
-        MENUITEM "Save parameters to DB",       IDM_SAVE_PARAM_DB
-        MENUITEM "Clear parameters from DB",    IDM_CLEAR_PARAM_DB
-        MENUITEM SEPARATOR
         POPUP "Zoom"
         BEGIN
-            MENUITEM "Fit to screen",               IDM_FIT_TO_SCREEN
-            MENUITEM "Fill with crop",              IDM_FILL_WITH_CROP
-            MENUITEM "Span all screens",            IDM_SPAN_SCREENS
-            MENUITEM "Full screen mode",            IDM_FULL_SCREEN_MODE
-            MENUITEM "Fit window to image",         IDM_FIT_WINDOW_TO_IMAGE
+            MENUITEM "Fit to screen", IDM_FIT_TO_SCREEN
+            MENUITEM "Fill with crop", IDM_FILL_WITH_CROP
+            MENUITEM "Span all screens", IDM_SPAN_SCREENS
+            MENUITEM "Full screen mode", IDM_FULL_SCREEN_MODE
+            MENUITEM "Fit window to image", IDM_FIT_WINDOW_TO_IMAGE
             MENUITEM SEPARATOR
-            MENUITEM "Hide window title bar",       IDM_HIDE_TITLE_BAR
-            MENUITEM "Set window always on top",    IDM_ALWAYS_ON_TOP
+            MENUITEM "Hide window title bar", IDM_HIDE_TITLE_BAR
+            MENUITEM "Set window always on top", IDM_ALWAYS_ON_TOP
             MENUITEM SEPARATOR
-            MENUITEM "400 %",                       IDM_ZOOM_400
-            MENUITEM "200 %",                       IDM_ZOOM_200
-            MENUITEM "100 %\t0x3a98",               IDM_ZOOM_100
-            MENUITEM "50 %",                        IDM_ZOOM_50
-            MENUITEM "25 %",                        IDM_ZOOM_25
+            MENUITEM "400 %", IDM_ZOOM_400
+            MENUITEM "200 %", IDM_ZOOM_200
+            MENUITEM "100 %\t0x3a98", IDM_ZOOM_100
+            MENUITEM "50 %", IDM_ZOOM_50
+            MENUITEM "25 %", IDM_ZOOM_25
+            MENUITEM SEPARATOR
+            POPUP "Auto zoom mode"
+            BEGIN
+            MENUITEM "Fit to screen (no zoom)", IDM_AUTO_ZOOM_FIT_NO_ZOOM
+            MENUITEM "Fill with crop (no zoom)", IDM_AUTO_ZOOM_FILL_NO_ZOOM
+            MENUITEM "Fit to screen", IDM_AUTO_ZOOM_FIT
+            MENUITEM "Fill with crop", IDM_AUTO_ZOOM_FILL
+            END
         END
-        POPUP "Auto zoom mode"
+        POPUP "Modify image"
         BEGIN
-            MENUITEM "Fit to screen (no zoom)",     IDM_AUTO_ZOOM_FIT_NO_ZOOM
-            MENUITEM "Fill with crop (no zoom)",    IDM_AUTO_ZOOM_FILL_NO_ZOOM
-            MENUITEM "Fit to screen",               IDM_AUTO_ZOOM_FIT
-            MENUITEM "Fill with crop",              IDM_AUTO_ZOOM_FILL
+            MENUITEM "Save processed image...\t0x5de", IDM_SAVE
+            MENUITEM SEPARATOR
+            POPUP "Transform"
+            BEGIN
+                MENUITEM "Rotate +90",                  IDM_ROTATE_90
+                MENUITEM "Rotate -90",                  IDM_ROTATE_270
+                MENUITEM "Rotate...",                   IDM_ROTATE
+                MENUITEM "Change size...",              IDM_CHANGESIZE
+                MENUITEM "Perspective correction...",   IDM_PERSPECTIVE
+                MENUITEM SEPARATOR
+                MENUITEM "Mirror horizontally",         IDM_MIRROR_H
+                MENUITEM "Mirror vertically",           IDM_MIRROR_V
+            END
+            POPUP "Transform (JPEG lossless)"
+            BEGIN
+                MENUITEM "Rotate +90\t0x24B9",          IDM_ROTATE_90_LOSSLESS
+                MENUITEM "Rotate -90\t0x24C3",          IDM_ROTATE_270_LOSSLESS
+                MENUITEM "Rotate 180",                  IDM_ROTATE_180_LOSSLESS
+                MENUITEM SEPARATOR
+                MENUITEM "Mirror horizontally",         IDM_MIRROR_H_LOSSLESS
+                MENUITEM "Mirror vertically",           IDM_MIRROR_V_LOSSLESS
+            END
+            MENUITEM SEPARATOR
+            MENUITEM "Batch rename/copy...", IDM_BATCH_COPY
+            POPUP "Set modification date"
+            BEGIN
+                MENUITEM "to current date", IDM_TOUCH_IMAGE
+                MENUITEM "to EXIF date", IDM_TOUCH_IMAGE_EXIF
+                MENUITEM "to EXIF date (all files in folder)", IDM_TOUCH_IMAGE_EXIF_FOLDER
+            END
+            MENUITEM SEPARATOR
+            MENUITEM "Auto correction",             IDM_AUTO_CORRECTION
+            MENUITEM "Local density correction",    IDM_LDC
+            MENUITEM "Keep parameters",             IDM_KEEP_PARAMETERS
+            MENUITEM SEPARATOR
+            MENUITEM "Save parameters to DB",       IDM_SAVE_PARAM_DB
+            MENUITEM "Clear parameters from DB",    IDM_CLEAR_PARAM_DB
+        END
+        POPUP "User commands"
+        BEGIN
+            MENUITEM "_empty_", IDM_ABOUT
         END
         MENUITEM SEPARATOR
         POPUP "Settings/Admin"
         BEGIN
-            MENUITEM "Edit global settings...",     IDM_EDIT_GLOBAL_CONFIG
-            MENUITEM "Edit user settings...",       IDM_EDIT_USER_CONFIG
+            MENUITEM "Edit user settings...", IDM_EDIT_USER_CONFIG
+            MENUITEM "Edit user keymap...", IDM_EDIT_USER_CONFIG // TODO
+            MENUITEM "Edit global settings...", IDM_EDIT_GLOBAL_CONFIG
+            MENUITEM "Edit global keymap...", IDM_EDIT_GLOBAL_CONFIG // TODO
             MENUITEM "Update user settings...",     IDM_UPDATE_USER_CONFIG
             MENUITEM "Manage 'Open image with' menu...", IDM_MANAGE_OPEN_WITH_MENU
             MENUITEM SEPARATOR
-            MENUITEM "Set current parameters as default values...", IDM_SAVE_PARAMETERS
-            MENUITEM SEPARATOR
             MENUITEM "Set as default viewer...",    IDM_SET_AS_DEFAULT_VIEWER
             MENUITEM SEPARATOR
+            MENUITEM "Set current parameters as default values...", IDM_SAVE_PARAMETERS
             MENUITEM "Backup parameter DB...",      IDM_BACKUP_PARAMDB
             MENUITEM "Restore parameter DB...",     IDM_RESTORE_PARAMDB
+            MENUITEM SEPARATOR
+            MENUITEM "About JPEGView...", IDM_ABOUT
         END
-        MENUITEM SEPARATOR
-        POPUP "User commands"
-        BEGIN
-            MENUITEM "_empty_",                     IDM_ABOUT
-        END
-        MENUITEM SEPARATOR
-        MENUITEM "About JPEGView...",           IDM_ABOUT
-        MENUITEM SEPARATOR
         MENUITEM "Exit\t0xffff",                IDM_EXIT
     END
 END

@@ -321,9 +321,9 @@
 
 // in the main menu
 // these position must be changed if menu items are inserted
-#define SUBMENU_POS_OPENWITH 3
+#define SUBMENU_POS_OPENWITH 2
 #define SUBMENU_POS_MODDATE 9
-#define SUBMENU_POS_WALLPAPER 10
+// #define SUBMENU_POS_WALLPAPER 10
 #define SUBMENU_POS_NAVIGATION 23
 #define SUBMENU_POS_DISPLAY_ORDER 24
 #define SUBMENU_POS_MOVIE 25
