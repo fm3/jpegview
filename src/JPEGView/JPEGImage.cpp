@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+﻿#include "StdAfx.h"
 #include "JPEGImage.h"
 #include "BasicProcessing.h"
 #include "XMMImage.h"
@@ -197,6 +197,15 @@ CJPEGImage::~CJPEGImage(void) {
 bool CJPEGImage::CanUseLosslessJPEGTransformations() {
 	return m_eImageFormat == IF_JPEG && (m_nOrigWidth % tjMCUWidth[m_eJPEGChromoSampling]) == 0 &&
 		(m_nOrigHeight % tjMCUHeight[m_eJPEGChromoSampling]) == 0;
+}
+
+CString CJPEGImage::GetBlockSizeFormatted() {
+	if (m_eImageFormat == IF_JPEG) {
+		CString formatted;
+		formatted.Format(_T("%d × %d"), tjMCUWidth[m_eJPEGChromoSampling], tjMCUHeight[m_eJPEGChromoSampling]);
+		return formatted;
+	}
+	return _T("");
 }
 
 void CJPEGImage::TrimRectToMCUBlockSize(CRect& rect) {

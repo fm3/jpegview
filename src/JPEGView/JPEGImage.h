@@ -179,6 +179,8 @@ public:
 	// Checks if this is a JPEG image and if the dimension of this image is dividable by the JPEG block size used.
 	bool CanUseLosslessJPEGTransformations();
 
+	CString GetBlockSizeFormatted();
+
 	// Trims the given rectangle to MCU block size of this image (allowing lossless JPEG transformations)
 	void TrimRectToMCUBlockSize(CRect& rect);
 
