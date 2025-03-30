@@ -285,11 +285,11 @@ BEGIN
         MENUITEM "Show in Explorer", IDM_EXPLORE
         MENUITEM SEPARATOR
         MENUITEM "Print image...",              IDM_PRINT //HIDDEN
-        // POPUP "Set as desktop wallpaper"
-        // BEGIN
-        //     MENUITEM "Use original image",          IDM_SET_WALLPAPER_ORIG
-        //     MENUITEM "Use processed image as displayed", IDM_SET_WALLPAPER_DISPLAY
-        // END
+        POPUP "Set as desktop wallpaper"
+        BEGIN
+             MENUITEM "Use original image",          IDM_SET_WALLPAPER_ORIG
+             MENUITEM "Use processed image as displayed", IDM_SET_WALLPAPER_DISPLAY
+        END
         POPUP "Copy / Paste"
         BEGIN
             MENUITEM "Copy full size image", IDM_COPY_FULL
@@ -448,9 +448,9 @@ BEGIN
         POPUP "Settings/Admin"
         BEGIN
             MENUITEM "Edit user settings...", IDM_EDIT_USER_CONFIG
-            MENUITEM "Edit user keymap...", IDM_EDIT_USER_CONFIG // TODO
+            MENUITEM "Edit user keymap...", IDM_EDIT_USER_KEYMAP
             MENUITEM "Edit global settings...", IDM_EDIT_GLOBAL_CONFIG
-            MENUITEM "Edit global keymap...", IDM_EDIT_GLOBAL_CONFIG // TODO
+            MENUITEM "Edit global keymap...", IDM_EDIT_GLOBAL_KEYMAP
             MENUITEM "Update user settings...",     IDM_UPDATE_USER_CONFIG
             MENUITEM "Manage 'Open image with' menu...", IDM_MANAGE_OPEN_WITH_MENU
             MENUITEM SEPARATOR

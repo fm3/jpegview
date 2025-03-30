@@ -1141,16 +1141,20 @@ LRESULT CMainDlg::OnContextMenu(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam,
 
 	HMENU hMenuTrackPopup = ::GetSubMenu(hMenu, 0);
 	HelpersGUI::TranslateMenuStrings(hMenuTrackPopup, m_pKeyMap);
-	
+
+	int deletedMenusToplevel = 0;
+
 	if (m_pEXIFDisplayCtl->IsActive()) ::CheckMenuItem(hMenuTrackPopup, IDM_SHOW_FILEINFO, MF_CHECKED);
 	if (m_bShowFileName) ::CheckMenuItem(hMenuTrackPopup, IDM_SHOW_FILENAME, MF_CHECKED);
 	if (m_pNavPanelCtl->IsActive()) ::CheckMenuItem(hMenuTrackPopup, IDM_SHOW_NAVPANEL, MF_CHECKED);
 	if (m_bAutoContrast) ::CheckMenuItem(hMenuTrackPopup, IDM_AUTO_CORRECTION, MF_CHECKED);
 	if (m_bLDC) ::CheckMenuItem(hMenuTrackPopup, IDM_LDC, MF_CHECKED);
 	if (m_bKeepParams) ::CheckMenuItem(hMenuTrackPopup, IDM_KEEP_PARAMETERS, MF_CHECKED);
+	
 	HMENU hMenuNavigation = ::GetSubMenu(hMenuTrackPopup, SUBMENU_POS_NAVIGATION);
-	::CheckMenuItem(hMenuNavigation,  m_pFileList->GetNavigationMode()*10 + IDM_LOOP_FOLDER, MF_CHECKED);
-	HMENU hMenuOrdering = ::GetSubMenu(hMenuTrackPopup, SUBMENU_POS_DISPLAY_ORDER);
+	HMENU hMenuNavigationLoop = ::GetSubMenu(hMenuNavigation, SUBMENU_POS_NAVIGATION_LOOP);
+	::CheckMenuItem(hMenuNavigationLoop, m_pFileList->GetNavigationMode()*10 + IDM_LOOP_FOLDER, MF_CHECKED);
+	HMENU hMenuOrdering = ::GetSubMenu(hMenuNavigation, SUBMENU_POS_DISPLAY_ORDER);
 	::CheckMenuItem(hMenuOrdering,  
 		(m_pFileList->GetSorting() == Helpers::FS_LastModTime) ? IDM_SORT_MOD_DATE :
 		(m_pFileList->GetSorting() == Helpers::FS_CreationTime) ? IDM_SORT_CREATION_DATE :
@@ -1162,7 +1166,7 @@ LRESULT CMainDlg::OnContextMenu(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam,
 		::EnableMenuItem(hMenuOrdering, IDM_SORT_ASCENDING, MF_BYCOMMAND | MF_GRAYED);
 		::EnableMenuItem(hMenuOrdering, IDM_SORT_DESCENDING, MF_BYCOMMAND | MF_GRAYED);
 	}
-	HMENU hMenuMovie = ::GetSubMenu(hMenuTrackPopup, SUBMENU_POS_MOVIE);
+	HMENU hMenuMovie = ::GetSubMenu(hMenuNavigation, SUBMENU_POS_SLIDESHOW);
 	if (!m_bMovieMode) ::EnableMenuItem(hMenuMovie, IDM_STOP_MOVIE, MF_BYCOMMAND | MF_GRAYED);
 	HMENU hMenuZoom = ::GetSubMenu(hMenuTrackPopup, SUBMENU_POS_ZOOM);
 	if (m_bSpanVirtualDesktop) ::CheckMenuItem(hMenuZoom,  IDM_SPAN_SCREENS, MF_CHECKED);
@@ -1170,19 +1174,14 @@ LRESULT CMainDlg::OnContextMenu(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam,
 	if (m_bWindowBorderless) ::CheckMenuItem(hMenuZoom, IDM_HIDE_TITLE_BAR, MF_CHECKED);
 	if (m_bAlwaysOnTop) ::CheckMenuItem(hMenuZoom, IDM_ALWAYS_ON_TOP, MF_CHECKED);
 	if (IsAdjustWindowToImage() && IsImageExactlyFittingWindow()) ::CheckMenuItem(hMenuZoom, IDM_FIT_WINDOW_TO_IMAGE, MF_CHECKED);
-	HMENU hMenuAutoZoomMode = ::GetSubMenu(hMenuTrackPopup, SUBMENU_POS_AUTOZOOMMODE);
+	HMENU hMenuAutoZoomMode = ::GetSubMenu(hMenuZoom, SUBMENU_POS_AUTOZOOMMODE);
 	::CheckMenuItem(hMenuAutoZoomMode, GetAutoZoomMode() * 10 + IDM_AUTO_ZOOM_FIT_NO_ZOOM, MF_CHECKED);
 	HMENU hMenuSettings = ::GetSubMenu(hMenuTrackPopup, SUBMENU_POS_SETTINGS);
-	HMENU hMenuModDate = ::GetSubMenu(hMenuTrackPopup, SUBMENU_POS_MODDATE);
+	HMENU hMenuModify = ::GetSubMenu(hMenuTrackPopup, SUBMENU_POS_MODIFY);
+	HMENU hMenuModDate = ::GetSubMenu(hMenuModify, SUBMENU_POS_MODIFY_MODDATE);
 	HMENU hMenuUserCommands = ::GetSubMenu(hMenuTrackPopup, SUBMENU_POS_USER_COMMANDS);
 	HMENU hMenuOpenWithCommands = ::GetSubMenu(hMenuTrackPopup, SUBMENU_POS_OPENWITH);
-	// HMENU hMenuWallpaper = ::GetSubMenu(hMenuTrackPopup, SUBMENU_POS_WALLPAPER);
 
-	if (!HelpersGUI::CreateUserCommandsMenu(hMenuUserCommands)) {
-		::DeleteMenu(hMenuTrackPopup, SUBMENU_POS_USER_COMMANDS + 1, MF_BYPOSITION);
-		::DeleteMenu(hMenuTrackPopup, SUBMENU_POS_USER_COMMANDS, MF_BYPOSITION);
-		::DeleteMenu(hMenuTrackPopup, SUBMENU_POS_USER_COMMANDS - 1, MF_BYPOSITION);
-	}
 	if (!m_bFullScreenMode) {
 		// Transition effect and speed only available in full screen mode
 		::DeleteMenu(hMenuMovie, 9, MF_BYPOSITION);
@@ -1203,7 +1202,8 @@ LRESULT CMainDlg::OnContextMenu(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam,
 	::EnableMenuItem(hMenuMovie, IDM_MOVIE_START_FPS, MF_BYCOMMAND | MF_GRAYED);
 
 	if (!CSettingsProvider::This().AllowEditGlobalSettings()) {
-		::DeleteMenu(hMenuSettings, 0, MF_BYPOSITION);
+		::DeleteMenu(hMenuSettings, IDM_EDIT_GLOBAL_CONFIG, MF_BYCOMMAND);
+		::DeleteMenu(hMenuSettings, IDM_EDIT_GLOBAL_KEYMAP, MF_BYCOMMAND);
 	}
 
 	bool bCanPaste = ::IsClipboardFormatAvailable(CF_DIB);
@@ -1211,7 +1211,7 @@ LRESULT CMainDlg::OnContextMenu(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam,
 
 	bool bCanDoLosslessJPEGTransform = (m_pCurrentImage != NULL) && m_pCurrentImage->GetImageFormat() == IF_JPEG && !m_pCurrentImage->IsDestructivelyProcessed();
 
-	if (!bCanDoLosslessJPEGTransform) ::EnableMenuItem(hMenuTrackPopup, SUBMENU_POS_TRANSFORM_LOSSLESS, MF_BYPOSITION | MF_GRAYED);
+	if (!bCanDoLosslessJPEGTransform) ::EnableMenuItem(hMenuModify, SUBMENU_POS_TRANSFORM_LOSSLESS, MF_BYPOSITION | MF_GRAYED);
 
 	if (m_pCurrentImage == NULL) {
 		::EnableMenuItem(hMenuTrackPopup, IDM_SAVE, MF_BYCOMMAND | MF_GRAYED);
@@ -1224,8 +1224,8 @@ LRESULT CMainDlg::OnContextMenu(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam,
 		::EnableMenuItem(hMenuTrackPopup, IDM_SAVE_PARAM_DB, MF_BYCOMMAND | MF_GRAYED);
 		::EnableMenuItem(hMenuTrackPopup, IDM_CLEAR_PARAM_DB, MF_BYCOMMAND | MF_GRAYED);
 		::EnableMenuItem(hMenuTrackPopup, SUBMENU_POS_ZOOM, MF_BYPOSITION  | MF_GRAYED);
-		::EnableMenuItem(hMenuTrackPopup, SUBMENU_POS_MODDATE, MF_BYPOSITION  | MF_GRAYED);
-		::EnableMenuItem(hMenuTrackPopup, SUBMENU_POS_TRANSFORM, MF_BYPOSITION  | MF_GRAYED);
+		::EnableMenuItem(hMenuModify, SUBMENU_POS_MODIFY_MODDATE, MF_BYPOSITION  | MF_GRAYED);
+		::EnableMenuItem(hMenuModify, SUBMENU_POS_TRANSFORM, MF_BYPOSITION  | MF_GRAYED);
 		// ::EnableMenuItem(hMenuTrackPopup, SUBMENU_POS_WALLPAPER, MF_BYPOSITION | MF_GRAYED);
 	} else {
 		if (m_bKeepParams || m_pCurrentImage->IsClipboardImage() ||
@@ -1250,7 +1250,8 @@ LRESULT CMainDlg::OnContextMenu(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam,
 		}*/
 	}
 	if (!HelpersGUI::CreateOpenWithCommandsMenu(hMenuOpenWithCommands) || m_pCurrentImage == NULL) {
-		::DeleteMenu(hMenuTrackPopup, SUBMENU_POS_OPENWITH, MF_BYPOSITION);
+		::DeleteMenu(hMenuTrackPopup, SUBMENU_POS_OPENWITH - deletedMenusToplevel, MF_BYPOSITION);
+		deletedMenusToplevel += 1;
 	}
 	if (m_bMovieMode) {
 		::EnableMenuItem(hMenuTrackPopup, IDM_SAVE, MF_BYCOMMAND | MF_GRAYED);
@@ -1263,15 +1264,26 @@ LRESULT CMainDlg::OnContextMenu(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam,
 	} else {
 		// Delete the 'Stop movie' menu entry if no movie is playing
 		::DeleteMenu(hMenuTrackPopup, 0, MF_BYPOSITION);
-		::DeleteMenu(hMenuTrackPopup, 0, MF_BYPOSITION);
+		::DeleteMenu(hMenuTrackPopup, 0, MF_BYPOSITION); // the separator
+		deletedMenusToplevel += 2;
 	}
 	// Hide some menus I never use
 	::DeleteMenu(hMenuTrackPopup, IDM_PRINT, MF_BYCOMMAND);
-	::DeleteMenu(hMenuTrackPopup, IDM_SET_WALLPAPER_ORIG, MF_BYCOMMAND);
-	::DeleteMenu(hMenuTrackPopup, IDM_SET_WALLPAPER_DISPLAY, MF_BYCOMMAND);
-	::DeleteMenu(hMenuTrackPopup, IDM_UPDATE_USER_CONFIG, MF_BYCOMMAND);
+	deletedMenusToplevel += 1;
+	::DeleteMenu(hMenuTrackPopup, IDM_UPDATE_USER_CONFIG, MF_BYCOMMAND); // not in toplevel
+
+	::DeleteMenu(hMenuTrackPopup, SUBMENU_POS_WALLPAPER - deletedMenusToplevel, MF_BYPOSITION);
+	deletedMenusToplevel += 1;
+
 	::DeleteMenu(hMenuTrackPopup, IDM_SHOW_FILENAME, MF_BYCOMMAND);
 	::DeleteMenu(hMenuTrackPopup, IDM_SHOW_NAVPANEL, MF_BYCOMMAND);
+	deletedMenusToplevel += 2;
+
+	if (!HelpersGUI::CreateUserCommandsMenu(hMenuUserCommands)) {
+		// User commands are empty, delete the menu
+		::DeleteMenu(hMenuTrackPopup, SUBMENU_POS_USER_COMMANDS - deletedMenusToplevel, MF_BYPOSITION);
+		deletedMenusToplevel += 1;
+	}
 
 	int nMenuCmd = TrackPopupMenu(CPoint(nX, nY), hMenuTrackPopup);
 	ExecuteCommand(nMenuCmd);
