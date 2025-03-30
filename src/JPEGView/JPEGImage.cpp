@@ -600,7 +600,10 @@ void* CJPEGImage::Resample(CSize fullTargetSize, CSize clippingSize, CPoint targ
 
 	if (fullTargetSize.cx > 65535 || fullTargetSize.cy > 65535) return NULL;
 
-	if (GetProcessingFlag(eProcFlags, PFLAG_HighQualityResampling) && 
+	// MOD: no HQ resampling on upsample. Should really be a config option.
+	bool bUseHQResampling = GetProcessingFlag(eProcFlags, PFLAG_HighQualityResampling) && eResizeType == DownSample;
+
+	if (bUseHQResampling &&
 		!(eResizeType == NoResize && (filter == Filter_Downsampling_Best_Quality || filter == Filter_Downsampling_No_Aliasing))) {
 		if (SupportsSIMD(cpu)) {
 			if (eResizeType == UpSample) {

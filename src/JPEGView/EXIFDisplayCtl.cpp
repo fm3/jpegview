@@ -96,6 +96,25 @@ void CEXIFDisplayCtl::OnPrePaintMainDlg(HDC hPaintDC) {
 	}
 }
 
+CString CEXIFDisplayCtl::FormatRational(Rational rational) {
+	CString sFormatted;
+	if (rational.Denominator == 1) {
+		sFormatted.Format(_T("%d"), rational.Numerator);
+	}
+	else if (rational.Numerator > 9) {
+		if (rational.Numerator * 3 < rational.Denominator) {
+			sFormatted.Format(_T("1/%d"), rational.Denominator/ rational.Numerator);
+		}
+		else {
+			sFormatted.Format(_T("%g"), double(rational.Numerator) / rational.Denominator);
+		}
+	}
+	else {
+		sFormatted.Format(_T("%d/%d"), rational.Numerator, rational.Denominator);
+	}
+	return sFormatted;
+}
+
 void CEXIFDisplayCtl::FillEXIFDataDisplay() {
 	m_pEXIFDisplay->ClearTexts();
 
@@ -127,7 +146,7 @@ void CEXIFDisplayCtl::FillEXIFDataDisplay() {
 	}
 
 	CString sFileSize = _T("");
-	if (!CurrentImage()->IsClipboardImage()) {
+	if (!CurrentImage()->IsClipboardImage() && pFileList->Current() != NULL) {
 		HANDLE hFile = ::CreateFile(pFileList->Current(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
 		if (hFile != INVALID_HANDLE_VALUE) {
 			__int64 fileSize = 0;
@@ -172,27 +191,12 @@ void CEXIFDisplayCtl::FillEXIFDataDisplay() {
 				sFormattedIso.Format(_T("ISO %d"), (int)pEXIFReader->GetISOSpeed());
 				m_pEXIFDisplay->AddLine(CNLS::GetString(_T("ISO speed:")), sFormattedIso);
 			}
-
 			if (pEXIFReader->GetExposureTimePresent()) {
-				CString sFormattedExposureTimeRational;
 				Rational exposure = pEXIFReader->GetExposureTime();
-				if (exposure.Denominator == 1) {
-					sFormattedExposureTimeRational.Format(_T("%d"), exposure.Numerator);
-				}
-				else if (exposure.Numerator > 9) {
-					if (exposure.Numerator * 3 < exposure.Denominator) {
-						sFormattedExposureTimeRational.Format(_T("%d"), exposure.Denominator / exposure.Numerator);
-					}
-					else {
-						sFormattedExposureTimeRational.Format(_T("%g"), double(exposure.Numerator) / exposure.Denominator);
-					}
-				}
-				else {
-					sFormattedExposureTimeRational.Format(_T("%d/%d"), exposure.Numerator, exposure.Denominator);
-				}
 				CString sFormattedExposureTime;
-				sFormattedExposureTime.Format(_T("%s%s sec"), secondColPadding, sFormattedExposureTimeRational);
-				m_pEXIFDisplay->AddLine(CNLS::GetString(_T("Exposure time:")), sFormattedExposureTime, false, true);
+				sFormattedExposureTime.Format(_T("%s%s sec"), secondColPadding, FormatRational(exposure));
+				bool bExposureTimeSameLine = pEXIFReader->GetISOSpeedPresent();
+				m_pEXIFDisplay->AddLine(CNLS::GetString(_T("Exposure time:")), sFormattedExposureTime, false, bExposureTimeSameLine);
 			}
 			if (pEXIFReader->GetFocalLengthPresent()) {
 				CString sFormattedFocalLength;
@@ -202,27 +206,14 @@ void CEXIFDisplayCtl::FillEXIFDataDisplay() {
 			if (pEXIFReader->GetFNumberPresent()) {
 				CString sFormattedFNumber;
 				sFormattedFNumber.Format(_T("%s𝑓/%g"), secondColPadding, pEXIFReader->GetFNumber());
-				m_pEXIFDisplay->AddLine(CNLS::GetString(_T("Aperture:")), sFormattedFNumber, false, true);
+				bool bFNumberSameLine = pEXIFReader->GetFocalLengthPresent();
+				m_pEXIFDisplay->AddLine(CNLS::GetString(_T("Aperture:")), sFormattedFNumber, false, bFNumberSameLine);
 			}
 			if (pEXIFReader->IsGPSInformationPresent()) {
 				CString sGPSLocation = CreateGPSString(pEXIFReader->GetGPSLatitude(), pEXIFReader->GetGPSLongitude());
 				m_pEXIFDisplay->SetGPSLocation(sGPSLocation, CreateGPSURL(pEXIFReader->GetGPSLatitude(), pEXIFReader->GetGPSLongitude()));
 				m_pEXIFDisplay->AddLine(CNLS::GetString(_T("Location:")), sGPSLocation, true);
 			}
-			/*
-			if (pEXIFReader->GetExposureTimePresent()) {
-				m_pEXIFDisplay->AddLine(CNLS::GetString(_T("Exposure time (s):")), pEXIFReader->GetExposureTime());
-			}
-			if (pEXIFReader->GetFocalLengthPresent()) {
-				m_pEXIFDisplay->AddLine(CNLS::GetString(_T("Focal length (mm):")), pEXIFReader->GetFocalLength(), 1);
-			}
-			if (pEXIFReader->GetFNumberPresent()) {
-				m_pEXIFDisplay->AddLine(CNLS::GetString(_T("𝑓-Number:")), pEXIFReader->GetFNumber(), 1);
-			}
-			if (pEXIFReader->GetISOSpeedPresent()) {
-				m_pEXIFDisplay->AddLine(CNLS::GetString(_T("ISO Speed:")), (int)pEXIFReader->GetISOSpeed());
-			}*/
-
 			if (bShowMoreDetails) {
 				if (pEXIFReader->IsGPSAltitudePresent()) {
 					m_pEXIFDisplay->AddLine(CNLS::GetString(_T("Altitude (m):")), pEXIFReader->GetGPSAltitude(), 0);
@@ -243,41 +234,52 @@ void CEXIFDisplayCtl::FillEXIFDataDisplay() {
 		}
 		else if (pRawMetaData != NULL) {
 			if (pRawMetaData->GetAcquisitionTime().wYear > 1985) {
-				m_pEXIFDisplay->AddLine(CNLS::GetString(_T("Acquisition date:")), pRawMetaData->GetAcquisitionTime());
+				m_pEXIFDisplay->AddLine(CNLS::GetString(_T("Acquired:")), pRawMetaData->GetAcquisitionTime());
 			}
 			else {
 				const FILETIME* pFileTime = pFileList->CurrentModificationTime();
 				if (pFileTime != NULL) {
-					m_pEXIFDisplay->AddLine(CNLS::GetString(_T("Modification date:")), *pFileTime);
+					m_pEXIFDisplay->AddLine(CNLS::GetString(_T("Modified:")), *pFileTime);
 				}
+			}
+			if (pRawMetaData->GetIsoSpeed() > 0.0) {
+				m_pEXIFDisplay->AddLine(CNLS::GetString(_T("ISO Speed:")), (int)pRawMetaData->GetIsoSpeed());
+			}
+			if (pRawMetaData->GetExposureTime() > 0.0) {
+				double exposureTime = pRawMetaData->GetExposureTime();
+				Rational exposureRational = (exposureTime < 1.0) ? Rational(1, Helpers::RoundToInt(1.0 / exposureTime)) : Rational(Helpers::RoundToInt(exposureTime), 1);
+				CString sFormattedExposureTime;
+				sFormattedExposureTime.Format(_T("%s%s sec"), secondColPadding, FormatRational(exposureRational));
+				bool bExposureTimeSameLine = pRawMetaData->GetIsoSpeed() > 0.0;
+				m_pEXIFDisplay->AddLine(CNLS::GetString(_T("Exposure time:")), sFormattedExposureTime, false, bExposureTimeSameLine);
+			}
+			if (pRawMetaData->GetFocalLength() > 0.0) {
+				CString sFormattedFocalLength;
+				sFormattedFocalLength.Format(_T("%g mm"), pRawMetaData->GetFocalLength());
+				m_pEXIFDisplay->AddLine(CNLS::GetString(_T("Focal length:")), sFormattedFocalLength);
+			}
+			if (pRawMetaData->GetAperture() > 0.0) {
+				CString sFormattedFNumber;
+				sFormattedFNumber.Format(_T("%s𝑓/%g"), secondColPadding, pRawMetaData->GetAperture());
+				bool bApertureSameLine = pRawMetaData->GetFocalLength() > 0.0;
+				m_pEXIFDisplay->AddLine(CNLS::GetString(_T("Aperture:")), sFormattedFNumber, false, bApertureSameLine);
 			}
 			if (pRawMetaData->IsGPSInformationPresent()) {
 				CString sGPSLocation = CreateGPSString(pRawMetaData->GetGPSLatitude(), pRawMetaData->GetGPSLongitude());
 				m_pEXIFDisplay->SetGPSLocation(sGPSLocation, CreateGPSURL(pRawMetaData->GetGPSLatitude(), pRawMetaData->GetGPSLongitude()));
 				m_pEXIFDisplay->AddLine(CNLS::GetString(_T("Location:")), sGPSLocation, true);
+			}
+
+			if (bShowMoreDetails) {
 				if (pRawMetaData->IsGPSAltitudePresent()) {
 					m_pEXIFDisplay->AddLine(CNLS::GetString(_T("Altitude (m):")), pRawMetaData->GetGPSAltitude(), 0);
 				}
-			}
-			if (pRawMetaData->GetManufacturer()[0] != 0) {
-				m_pEXIFDisplay->AddLine(CNLS::GetString(_T("Camera model:")), CString(pRawMetaData->GetManufacturer()) + _T(" ") + pRawMetaData->GetModel());
-			}
-			if (pRawMetaData->GetExposureTime() > 0.0) {
-				double exposureTime = pRawMetaData->GetExposureTime();
-				Rational rational = (exposureTime < 1.0) ? Rational(1, Helpers::RoundToInt(1.0 / exposureTime)) : Rational(Helpers::RoundToInt(exposureTime), 1);
-				m_pEXIFDisplay->AddLine(CNLS::GetString(_T("Exposure time (s):")), rational);
-			}
-			if (pRawMetaData->IsFlashFired()) {
-				m_pEXIFDisplay->AddLine(CNLS::GetString(_T("Flash fired:")), CNLS::GetString(_T("yes")));
-			}
-			if (pRawMetaData->GetFocalLength() > 0.0) {
-				m_pEXIFDisplay->AddLine(CNLS::GetString(_T("Focal length (mm):")), pRawMetaData->GetFocalLength(), 1);
-			}
-			if (pRawMetaData->GetAperture() > 0.0) {
-				m_pEXIFDisplay->AddLine(CNLS::GetString(_T("F-Number:")), pRawMetaData->GetAperture(), 1);
-			}
-			if (pRawMetaData->GetIsoSpeed() > 0.0) {
-				m_pEXIFDisplay->AddLine(CNLS::GetString(_T("ISO Speed:")), (int)pRawMetaData->GetIsoSpeed());
+				if (pRawMetaData->GetManufacturer()[0] != 0) {
+					m_pEXIFDisplay->AddLine(CNLS::GetString(_T("Camera model:")), CString(pRawMetaData->GetManufacturer()) + _T(" ") + pRawMetaData->GetModel());
+				}
+				if (pRawMetaData->IsFlashFired()) {
+					m_pEXIFDisplay->AddLine(CNLS::GetString(_T("Flash fired:")), CNLS::GetString(_T("yes")));
+				}
 			}
 		}
 		else {

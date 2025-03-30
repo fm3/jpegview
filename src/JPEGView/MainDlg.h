@@ -72,6 +72,7 @@ public:
 		MESSAGE_HANDLER(WM_RBUTTONUP, OnRButtonUp)
 		MESSAGE_HANDLER(WM_MBUTTONDOWN, OnMButtonDown)
 		MESSAGE_HANDLER(WM_MBUTTONUP, OnMButtonUp)
+		MESSAGE_HANDLER(WM_MBUTTONDBLCLK, OnMButtonDblClk)
 		MESSAGE_HANDLER(WM_XBUTTONDOWN, OnXButtonDown)
 		MESSAGE_HANDLER(WM_XBUTTONDBLCLK, OnXButtonDown)
 		MESSAGE_HANDLER(WM_MOUSEMOVE, OnMouseMove)
@@ -115,6 +116,7 @@ public:
 	LRESULT OnLButtonDblClk(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
 	LRESULT OnMButtonDown(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
 	LRESULT OnMButtonUp(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
+	LRESULT OnMButtonDblClk(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
 	LRESULT OnXButtonDown(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
 	LRESULT OnMouseMove(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& /*bHandled*/);
 	LRESULT OnMouseWheel(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& /*bHandled*/);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "PanelController.h"
+#include "EXIFReader.h"
 
 class CEXIFDisplay;
 
@@ -23,6 +24,8 @@ public:
 
 	virtual bool OnMouseMove(int nX, int nY);
 	virtual void OnPrePaintMainDlg(HDC hPaintDC);
+
+	virtual CString CEXIFDisplayCtl::FormatRational(Rational rational);
 
 private:
 	bool m_bVisible;

@@ -840,18 +840,21 @@ LRESULT CMainDlg::OnRButtonUp(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*
 	return 0;
 }
 
-LRESULT CMainDlg::OnMButtonDown(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam, BOOL& /*bHandled*/) {
-	this->SetCapture();
-	if (HandleMouseButtonByKeymap(VK_MBUTTON)) {
-		return 0;
-	}
-	StartDragging(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), false);
+LRESULT CMainDlg::OnMButtonDown(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam, BOOL& bHandled) {
+	// MOD: I don’t want dragging with middle click, instead normal handling so even fast-pased clicks are handled
+	bHandled = HandleMouseButtonByKeymap(VK_MBUTTON);
 	return 0;
 }
 
-LRESULT CMainDlg::OnMButtonUp(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/) {
-	EndDragging();
-	::ReleaseCapture();
+LRESULT CMainDlg::OnMButtonUp(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& bHandled) {
+	bHandled = HandleMouseButtonByKeymap(VK_MBUTTON, false);
+	return 0;
+}
+
+
+LRESULT CMainDlg::OnMButtonDblClk(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& bHandled) {
+	// MOD: Also have to handle MButtonDblClk so even fast-pased clicks are handled (I have it set to a toggle, and I want to toggle fast)
+	bHandled = HandleMouseButtonByKeymap(VK_MBUTTON, true);
 	return 0;
 }
 
@@ -1213,7 +1216,7 @@ LRESULT CMainDlg::OnContextMenu(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam,
 		::EnableMenuItem(hMenuTrackPopup, IDM_SAVE, MF_BYCOMMAND | MF_GRAYED);
 		::EnableMenuItem(hMenuTrackPopup, IDM_RELOAD, MF_BYCOMMAND | MF_GRAYED);
 		//::EnableMenuItem(hMenuTrackPopup, IDM_EXPLORE, MF_BYCOMMAND | MF_GRAYED);  // can still show path to an image which could not be loaded.  If file doesn't exist, nothing happens anyways
-		::EnableMenuItem(hMenuTrackPopup, IDM_PRINT, MF_BYCOMMAND | MF_GRAYED);
+		::EnableMenuItem(hMenuTrackPopup, IDM_PRINT, MF_BYCOMMAND | MF_DISABLED);
 		::EnableMenuItem(hMenuTrackPopup, IDM_COPY, MF_BYCOMMAND | MF_GRAYED);
 		::EnableMenuItem(hMenuTrackPopup, IDM_COPY_FULL, MF_BYCOMMAND | MF_GRAYED);
 		::EnableMenuItem(hMenuTrackPopup, IDM_COPY_PATH, MF_BYCOMMAND | MF_GRAYED);
@@ -1261,6 +1264,22 @@ LRESULT CMainDlg::OnContextMenu(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam,
 		::DeleteMenu(hMenuTrackPopup, 0, MF_BYPOSITION);
 		::DeleteMenu(hMenuTrackPopup, 0, MF_BYPOSITION);
 	}
+
+	// Hide some menus I never use
+	::DeleteMenu(hMenuTrackPopup, IDM_PRINT, MF_BYCOMMAND);
+	::DeleteMenu(hMenuTrackPopup, IDM_SET_WALLPAPER_ORIG, MF_BYCOMMAND);
+	::DeleteMenu(hMenuTrackPopup, IDM_SET_WALLPAPER_DISPLAY, MF_BYCOMMAND);
+	::DeleteMenu(hMenuTrackPopup, IDM_BATCH_COPY, MF_BYCOMMAND);
+	::DeleteMenu(hMenuTrackPopup, IDM_COPY, MF_BYCOMMAND);
+	::DeleteMenu(hMenuTrackPopup, IDM_SHOW_FILENAME, MF_BYCOMMAND);
+	::DeleteMenu(hMenuTrackPopup, IDM_PASTE, MF_BYCOMMAND);
+	::DeleteMenu(hMenuTrackPopup, IDM_AUTO_CORRECTION, MF_BYCOMMAND);
+	::DeleteMenu(hMenuTrackPopup, IDM_LDC, MF_BYCOMMAND);
+	::DeleteMenu(hMenuTrackPopup, IDM_KEEP_PARAMETERS, MF_BYCOMMAND);
+	::DeleteMenu(hMenuTrackPopup, IDM_SAVE_PARAMETERS, MF_BYCOMMAND);
+	::DeleteMenu(hMenuTrackPopup, IDM_SAVE_PARAM_DB, MF_BYCOMMAND);
+	::DeleteMenu(hMenuTrackPopup, IDM_CLEAR_PARAM_DB, MF_BYCOMMAND);
+	
 
 	int nMenuCmd = TrackPopupMenu(CPoint(nX, nY), hMenuTrackPopup);
 	ExecuteCommand(nMenuCmd);
@@ -1724,10 +1743,14 @@ void CMainDlg::ExecuteCommand(int nCommand) {
 			break;
 		case IDM_TOGGLE_FIT_TO_SCREEN_100_PERCENTS:
 		case IDM_TOGGLE_FILL_WITH_CROP_100_PERCENTS:
-			if (fabs(m_dZoom - 1) < 0.01) {
-				ResetZoomToFitScreen(nCommand == IDM_TOGGLE_FILL_WITH_CROP_100_PERCENTS, true, true);
-			} else {
-				ResetZoomTo100Percents(m_bMouseOn);
+			if (m_pCurrentImage != NULL) {
+				double dZoomForFitToScreen = GetZoomFactorForFitToScreen(nCommand == IDM_TOGGLE_FILL_WITH_CROP_100_PERCENTS, true);
+				if (abs(dZoomForFitToScreen - m_dZoom) < 0.001) {
+					ResetZoomTo100Percents(m_bMouseOn);
+				}
+				else {
+					ResetZoomToFitScreen(nCommand == IDM_TOGGLE_FILL_WITH_CROP_100_PERCENTS, true, true);
+				}
 			}
 			break;
 		case IDM_SPAN_SCREENS:
