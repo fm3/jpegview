@@ -7,6 +7,7 @@
 #include "ProcessParams.h"
 #include "Helpers.h"
 #include "CropCtl.h"
+#include "SettingsProvider.h"
 
 class CFileList;
 class CJPEGProvider;
@@ -337,6 +338,7 @@ private:
 	bool m_bSelectZoom;  // keeps track of select-to-zoom mode when CTRL+SHIFT+LMouse
 
 	void ExploreFile();
+	void ToggleFullScreen(CSettingsProvider& sp);
 	bool OpenFileWithDialog(bool bFullScreen, bool bAfterStartup);
 	void OpenFile(LPCTSTR sFileName, bool bAfterStartup);
 	bool SaveImage(bool bFullSize);
@@ -367,7 +369,9 @@ private:
 	CRect ScreenToDIB(const CSize& sizeDIB, const CRect& rect);
 	void ToggleMonitor();
 	CRect GetZoomTextRect(CRect imageProcessingArea);
-	void EditINIFile(bool bGlobalINI);
+	void EditSettingsFile(bool bGlobalINI);
+	void EditKeymapFile(bool bGlobalKeymap);
+	void EditTextFile(LPCTSTR sFileName);
 	int GetLoadErrorAfterOpenFile();
 	void CheckIfApplyAutoFitWndToImage(bool bInInitDialog);
 	void PrefetchDIB(const CRect& clientRect);

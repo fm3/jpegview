@@ -1773,54 +1773,7 @@ void CMainDlg::ExecuteCommand(int nCommand) {
 			}
 			break;
 		case IDM_FULL_SCREEN_MODE:
-			m_bFullScreenMode = !m_bFullScreenMode;
-			m_dZoomAtResizeStart = 1.0;
-			if (!m_bFullScreenMode) {
-				CRect windowRect;
-
-				// restore hidden title bar if enabled
-				SetCurrentWindowStyle();
-
-				HICON hIconSmall = (HICON)::LoadImage(_Module.GetResourceInstance(), MAKEINTRESOURCE(IDR_MAINFRAME), 
-					IMAGE_ICON, ::GetSystemMetrics(SM_CXSMICON), ::GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
-				SetIcon(hIconSmall, FALSE);
-				CRect defaultWindowRect = CMultiMonitorSupport::GetDefaultWindowRect();
-				double dZoom = -1;
-				windowRect = sp.ExplicitWindowRect() ?
-					defaultWindowRect :
-					Helpers::GetWindowRectMatchingImageSize(
-						m_hWnd,
-						CSize(MIN_WND_WIDTH, MIN_WND_HEIGHT),
-						defaultWindowRect.Size(),
-						dZoom, m_pCurrentImage, false, true, m_bWindowBorderless);
-				if (sp.DefaultMaximized()) {
-					this->ShowWindow(SW_MAXIMIZE);
-				}
-				else {
-					this->SetWindowPos(HWND_TOP, windowRect.left, windowRect.top, windowRect.Width(), windowRect.Height(), SWP_NOZORDER | SWP_NOCOPYBITS);
-				}
-				this->MouseOn();
-				m_bSpanVirtualDesktop = false;
-			} else {
-				if (!IsZoomed() && sp.ExplicitWindowRect()) {
-					// Save the old window rect to be able to restore it
-					CRect rect;
-					GetWindowRect(&rect);
-					CMultiMonitorSupport::SetDefaultWindowRect(rect);
-				}
-				HMONITOR hMonitor = ::MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
-				MONITORINFO monitorInfo;
-				monitorInfo.cbSize = sizeof(MONITORINFO);
-				if (::GetMonitorInfo(hMonitor, &monitorInfo)) {
-					CRect monitorRect(&(monitorInfo.rcMonitor));
-					this->SetWindowLongW(GWL_STYLE, WS_VISIBLE);
-					this->SetWindowPos(HWND_TOP, monitorRect.left, monitorRect.top, monitorRect.Width(), monitorRect.Height(), SWP_NOZORDER | SWP_NOCOPYBITS);
-				}
-				this->MouseOn();
-			}
-			m_dZoom = -1;
-			StartLowQTimer(ZOOM_TIMEOUT);
-			this->SetWindowPos(NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOCOPYBITS | SWP_FRAMECHANGED);
+			ToggleFullScreen(sp);
 			break;
 		case IDM_HIDE_TITLE_BAR:
 			if (!m_bFullScreenMode) {
@@ -1923,7 +1876,10 @@ void CMainDlg::ExecuteCommand(int nCommand) {
 			}
 		case IDM_EDIT_GLOBAL_CONFIG:
 		case IDM_EDIT_USER_CONFIG:
-			EditINIFile(nCommand == IDM_EDIT_GLOBAL_CONFIG);
+			EditSettingsFile(nCommand == IDM_EDIT_GLOBAL_CONFIG);
+			break;
+		case IDM_EDIT_USER_KEYMAP:
+			EditKeymapFile(nCommand == IDM_EDIT_GLOBAL_CONFIG);
 			break;
 		case IDM_UPDATE_USER_CONFIG:
 			if (::MessageBox(m_hWnd, CString(CNLS::GetString(_T("Update user settings with new settings from settings template file?"))) + _T('\n') +
@@ -1969,7 +1925,11 @@ void CMainDlg::ExecuteCommand(int nCommand) {
 					CleanupAndTerminate();
 				else
 					StopAnimation(); // stop any running animation
-			} else {
+			}
+			else if (m_bFullScreenMode) {
+				ToggleFullScreen(sp);
+			}
+			else {
 				CleanupAndTerminate();
 			}
 			break;
@@ -2141,6 +2101,58 @@ void CMainDlg::ExecuteCommand(int nCommand) {
 	if (nCommand >= IDM_FIRST_OPENWITH_CMD && nCommand <= IDM_LAST_OPENWITH_CMD) {
 		ExecuteUserCommand(HelpersGUI::FindOpenWithCommand(nCommand - IDM_FIRST_OPENWITH_CMD));
 	}
+}
+
+void CMainDlg::ToggleFullScreen(CSettingsProvider& sp) {
+	m_bFullScreenMode = !m_bFullScreenMode;
+	m_dZoomAtResizeStart = 1.0;
+	if (!m_bFullScreenMode) {
+		CRect windowRect;
+
+		// restore hidden title bar if enabled
+		SetCurrentWindowStyle();
+
+		HICON hIconSmall = (HICON)::LoadImage(_Module.GetResourceInstance(), MAKEINTRESOURCE(IDR_MAINFRAME),
+			IMAGE_ICON, ::GetSystemMetrics(SM_CXSMICON), ::GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
+		SetIcon(hIconSmall, FALSE);
+		CRect defaultWindowRect = CMultiMonitorSupport::GetDefaultWindowRect();
+		double dZoom = -1;
+		windowRect = sp.ExplicitWindowRect() ?
+			defaultWindowRect :
+			Helpers::GetWindowRectMatchingImageSize(
+				m_hWnd,
+				CSize(MIN_WND_WIDTH, MIN_WND_HEIGHT),
+				defaultWindowRect.Size(),
+				dZoom, m_pCurrentImage, false, true, m_bWindowBorderless);
+		if (sp.DefaultMaximized()) {
+			this->ShowWindow(SW_MAXIMIZE);
+		}
+		else {
+			this->SetWindowPos(HWND_TOP, windowRect.left, windowRect.top, windowRect.Width(), windowRect.Height(), SWP_NOZORDER | SWP_NOCOPYBITS);
+		}
+		this->MouseOn();
+		m_bSpanVirtualDesktop = false;
+	}
+	else {
+		if (!IsZoomed() && sp.ExplicitWindowRect()) {
+			// Save the old window rect to be able to restore it
+			CRect rect;
+			GetWindowRect(&rect);
+			CMultiMonitorSupport::SetDefaultWindowRect(rect);
+		}
+		HMONITOR hMonitor = ::MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
+		MONITORINFO monitorInfo;
+		monitorInfo.cbSize = sizeof(MONITORINFO);
+		if (::GetMonitorInfo(hMonitor, &monitorInfo)) {
+			CRect monitorRect(&(monitorInfo.rcMonitor));
+			this->SetWindowLongW(GWL_STYLE, WS_VISIBLE);
+			this->SetWindowPos(HWND_TOP, monitorRect.left, monitorRect.top, monitorRect.Width(), monitorRect.Height(), SWP_NOZORDER | SWP_NOCOPYBITS);
+		}
+		this->MouseOn();
+	}
+	m_dZoom = -1;
+	StartLowQTimer(ZOOM_TIMEOUT);
+	this->SetWindowPos(NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOCOPYBITS | SWP_FRAMECHANGED);
 }
 
 // Setting window styles have gotten out of hand with the addition of no title bar
@@ -3233,35 +3245,55 @@ CRect CMainDlg::GetZoomTextRect(CRect imageProcessingArea) {
 		nEndX, imageProcessingArea.bottom - HelpersGUI::ScaleToScreen(nZoomTextRectBottomOffset));
 }
 
-void CMainDlg::EditINIFile(bool bGlobalINI) {
+void CMainDlg::EditSettingsFile(bool bGlobalINI) {
 	LPCTSTR sINIFileName = bGlobalINI ? CSettingsProvider::This().GetGlobalINIFileName() : CSettingsProvider::This().GetUserINIFileName();
 	if (!bGlobalINI) {
 		if (!CSettingsProvider::This().ExistsUserINI()) {
 			// No user INI file, ask if global INI shall be copied
 			if (IDYES == ::MessageBox(m_hWnd, CNLS::GetString(_T("No user INI file exists yet. Create user INI file from INI file template?")), _T(JPEGVIEW_TITLE), MB_YESNO | MB_ICONQUESTION)) {
 				CSettingsProvider::This().CopyUserINIFromTemplate();
-			} else {
+			}
+			else {
 				return;
 			}
 		}
 	}
+	EditTextFile(sINIFileName);
+}
 
+void CMainDlg::EditKeymapFile(bool bGlobalKeymap) {
+	if (!bGlobalKeymap) {
+		if (!CKeyMap::ExistsUserKeyMap()) {
+			// No user keymap file, ask if global keymap shall be copied
+			if (IDYES == ::MessageBox(m_hWnd, CNLS::GetString(_T("No user keymap file exists yet. Create user keymap file from keymap file template?")), _T(JPEGVIEW_TITLE), MB_YESNO | MB_ICONQUESTION)) {
+				CKeyMap::CopyUserKeymapFromTemplate();
+			}
+			else {
+				return;
+			}
+		}
+	}
+	EditTextFile(bGlobalKeymap ? CKeyMap::GlobalKeymapFileName() : CKeyMap::UserKeymapFileName());
+}
+
+void CMainDlg::EditTextFile(LPCTSTR sFileName) {
 	Helpers::EIniEditor iniEditor = CSettingsProvider::This().IniEditor();
 	CString command;
 	LPCTSTR argument;
 	if (iniEditor == Helpers::INI_Notepad) {
 		command = _T("notepad.exe");
-		argument = sINIFileName;
+		argument = sFileName;
 	} else if (iniEditor == Helpers::INI_System) {
-		command = sINIFileName;
+		command = sFileName;
 		argument = NULL;
 	} else {
 		command = CSettingsProvider::This().CustomIniEditor();
 		command.Replace(_T("%exepath%"), CSettingsProvider::This().GetEXEPath());	
-		argument = sINIFileName;
+		argument = sFileName;
 	}
 	::ShellExecute(m_hWnd, _T("open"), command, argument, NULL, SW_SHOW);
 }
+
 
 void CMainDlg::UpdateWindowTitle() {
 	bool bShowFullPathInTitle  = CSettingsProvider::This().ShowFullPathInTitle();

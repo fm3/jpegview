@@ -26,6 +26,11 @@ public:
 
 	// gets the shortcut key name, e.g. 'Ctrl+P'
 	static CString GetShortcutKey(int combinedKeyCode);
+
+	static CString UserKeymapFileName();
+	static CString GlobalKeymapFileName();
+	static bool ExistsUserKeyMap();
+	static void CopyUserKeymapFromTemplate();
 private:
 
 	// key is the key code, value the command ID
