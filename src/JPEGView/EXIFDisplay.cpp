@@ -173,7 +173,8 @@ CRect CEXIFDisplay::PanelRect() {
 		m_nPrefixLength = 0;
 		m_nTitleWidth = 0;
 		int nTitleLength = 0;
-		int nMaxLength1 = 0, nMaxLength2 = 0;
+		int nMaxLengthColumn1 = 0, nMaxLengthColumn2 = 0;
+		int nLastLineLengthColumn2 = 0;
 		CSize size;
 		if (m_sPrefix != NULL) {
 			::GetTextExtentPoint32(dc, m_sPrefix, (int)_tcslen(m_sPrefix), &size);
@@ -211,21 +212,22 @@ CRect CEXIFDisplay::PanelRect() {
 			if (iter->Desc != NULL && m_bShowHistogram) {
 				::GetTextExtentPoint32(dc, iter->Desc, (int)_tcslen(iter->Desc), &size);
 				m_nLineHeight = max(m_nLineHeight, size.cy);
-				nMaxLength1 = max(nMaxLength1, size.cx);
+				nMaxLengthColumn1 = max(nMaxLengthColumn1, size.cx);
 			}
 			nLen2 = nLen1;
 			nLen1 = 0;
 			if (iter->Value != NULL) {
 				::GetTextExtentPoint32(dc, iter->Value, (int)_tcslen(iter->Value), &size);
 				m_nLineHeight = max(m_nLineHeight, size.cy);
-				nMaxLength2 = max(nMaxLength2, size.cx);
+				nMaxLengthColumn2 = max(nMaxLengthColumn2, size.cx);
+				nLastLineLengthColumn2 = size.cx;
 				nLen1 = size.cx;
 			}
 		}
 
 		int nButtonWidth = (int)(m_fDPIScale * BUTTON_SIZE);
-		bool bNeedsExpansionForButton = (m_bShowHistogram) && (nMaxLength2 - max(nLen1, nLen2)) < nButtonWidth + m_nGap;
-		int nNeededWidthNoBorders = max(nTitleLength, nMaxLength1 + nMaxLength2 + m_nGap) + (bNeedsExpansionForButton ? m_nGap + nButtonWidth : 0);
+		int columnGap = m_bShowHistogram ? m_nGap : 0;
+		int nNeededWidthNoBorders = max(max(nTitleLength, nMaxLengthColumn1 + nMaxLengthColumn2 + m_nGap), nMaxLengthColumn1 + columnGap + nLastLineLengthColumn2 + m_nGap/2 + nButtonWidth);
 		int nExpansionX = 0, nExpansionY = 0;
 		if (m_bShowHistogram) {
 			nExpansionX = max(0, HelpersGUI::ScaleToScreen(256) - nNeededWidthNoBorders);
@@ -245,7 +247,7 @@ CRect CEXIFDisplay::PanelRect() {
 		}
 
 		m_nNoHistogramSize = CSize(m_size.cx - nExpansionX, m_size.cy - nExpansionY);
-		m_nTab1 = nMaxLength1 + m_nGap;
+		m_nTab1 = nMaxLengthColumn1 + m_nGap;
 		if (!m_bShowHistogram) {
 			m_nTab1 = 0;
 		}

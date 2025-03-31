@@ -6,6 +6,7 @@
 #include "resource.h"
 #include <math.h>
 #include <limits.h>
+#include <chrono>
 
 #include "MainDlg.h"
 #include "HelpDlg.h"
@@ -307,6 +308,7 @@ void CMainDlg::SetStartupInfo(LPCTSTR sStartupFile, int nAutostartSlideShow, Hel
 }
 
 LRESULT CMainDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/) {	
+	auto before = std::chrono::high_resolution_clock::now();
 	UpdateWindowTitle();
 
 	// set the scaling of the screen (DPI) compared to 96 DPI (design value)
@@ -428,11 +430,18 @@ LRESULT CMainDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam
 
 	this->DragAcceptFiles();
 
+	auto afterInitDialog = std::chrono::high_resolution_clock::now();
+	CString durationStr;
+	long double durationLongDouble = std::chrono::duration_cast<std::chrono::milliseconds>(afterInitDialog - before).count();
+	durationStr.Format(_T("initDialog took %g ms\n"), durationLongDouble);
+	::OutputDebugString(durationStr);
+
 	return TRUE;
 }
 
 LRESULT CMainDlg::OnPaint(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
+	auto before = std::chrono::high_resolution_clock::now();
 	static bool s_bFirst = true;
 
 	if (m_bLockPaint) {
@@ -579,6 +588,12 @@ LRESULT CMainDlg::OnPaint(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, B
 	m_pPanelMgr->OnPostPaint(dc);
 
 	SetCursorForMoveSection();
+
+	auto afterPaint = std::chrono::high_resolution_clock::now();
+	CString durationStr;
+	long double durationLongDouble = std::chrono::duration_cast<std::chrono::milliseconds>(afterPaint- before).count();
+	durationStr.Format(_T("Paint took %g ms\n"), durationLongDouble);
+	::OutputDebugString(durationStr);
 
 	return 0;
 }
@@ -1660,17 +1675,17 @@ void CMainDlg::ExecuteCommand(int nCommand) {
 				bool bCrop = false;
 				MouseOn();
 				if (bAskConfirm) {
-					CString safeMsg;
+					CString sLosslessOrCropMessage;
 					if (bCanTransformWithoutCrop) {
-						safeMsg = _T("✓ Transformation will be fully lossless.\n");
+						sLosslessOrCropMessage = _T("✓ Transformation will be fully lossless.\n");
 					}
 					else {
-						safeMsg.Format(_T("Image will be cropped to match JPEG block size %s\n"), m_pCurrentImage->GetBlockSizeFormatted());
+						sLosslessOrCropMessage.Format(_T("Image will be cropped to match JPEG block size %s\n"), m_pCurrentImage->GetBlockSizeFormatted());
 					}
 					CString confirm90;
-					confirm90.Format(_T("↻ Rotate %s on disk by 90° clockwise?\n%s"), CurrentFileName(true), safeMsg);
+					confirm90.Format(_T("↻ Rotate %s on disk by 90° clockwise?\n%s"), CurrentFileName(true), sLosslessOrCropMessage);
 					CString confirm270;
-					confirm270.Format(_T("↺ Rotate %s on disk by 90° counterclockwise?\n%s"), CurrentFileName(true), safeMsg);
+					confirm270.Format(_T("↺ Rotate %s on disk by 90° counterclockwise?\n%s"), CurrentFileName(true), sLosslessOrCropMessage);
 					LPCTSTR sConfirmMsg = (nCommand == IDM_ROTATE_90_LOSSLESS_CONFIRM) ? confirm90 : confirm270;
 					long icon = bCanTransformWithoutCrop? MB_ICONQUESTION : MB_ICONWARNING;
 					bPerformTransformation = IDOK == ::MessageBox(m_hWnd,
@@ -2181,10 +2196,11 @@ bool CMainDlg::OpenFileWithDialog(bool bFullScreen, bool bAfterStartup) {
 	StopMovieMode();
 	StopAnimation();
 	MouseOn();
-	CFileOpenDialog dlgOpen(this->m_hWnd, m_pFileList->Current(), CFileList::GetSupportedFileEndings(), bFullScreen);
+	FileOpenDialog dlgOpen(m_pFileList->Current(), CFileList::GetSupportedFileEndings());
 	if (IDOK == dlgOpen.DoModal(this->m_hWnd)) {
 		m_isBeforeFileSelected = false;
-		OpenFile(dlgOpen.m_szFileName, bAfterStartup);
+		CString filePath = dlgOpen.GetFilePathStr();
+		OpenFile(filePath, bAfterStartup);
 		return true;
 	}
 	m_isBeforeFileSelected = false;
@@ -2454,6 +2470,8 @@ void CMainDlg::GotoImage(EImagePosition ePos) {
 }
 
 void CMainDlg::GotoImage(EImagePosition ePos, int nFlags) {
+	auto before = std::chrono::high_resolution_clock::now();
+
 	// Timer handling for slideshows
 	if (ePos == POS_Next || ePos == POS_NextSlideShow) {
 		if (m_nCurrentTimeout > 0) {
@@ -2620,6 +2638,12 @@ void CMainDlg::GotoImage(EImagePosition ePos, int nFlags) {
 		MSG msg;
 		while (::PeekMessage(&msg, this->m_hWnd, WM_KEYFIRST, WM_KEYLAST, PM_REMOVE));
 	}
+
+	auto afterGotoImage= std::chrono::high_resolution_clock::now();
+	CString durationStr;
+	long double durationLongDouble = std::chrono::duration_cast<std::chrono::milliseconds>(afterGotoImage - before).count();
+	durationStr.Format(_T("GotoImage took %g ms\n"), durationLongDouble);
+	::OutputDebugString(durationStr);
 }
 
 void CMainDlg::ReloadImage(bool keepParameters, bool updateWindow) {

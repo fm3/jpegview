@@ -286,6 +286,10 @@ CImageLoadThread* CJPEGProvider::SearchThreadForNewRequest(void) {
 }
 
 void CJPEGProvider::RemoveUnusedImages(bool bRemoveAlsoActiveRequests) {
+	/*if (m_requestList.size() < 50) {
+		// We have plenty memory. Let’s keep more images in cache!
+		return;
+	}*/
 	bool bRemoved = false;
 	int nTimeStampToRemove = -2;
 	do {
