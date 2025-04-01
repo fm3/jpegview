@@ -16,9 +16,11 @@ public:
 
 	virtual bool IsVisible();
 	virtual bool IsActive() { return m_bVisible; }
+	virtual bool GetShowHistogram() { return m_bShowHistogram; }
 
 	virtual void SetVisible(bool bVisible);
 	virtual void SetActive(bool bActive);
+	virtual void SetShowHistogram(bool bShowHistogram);
 
 	virtual void AfterNewImageLoaded();
 
@@ -29,6 +31,7 @@ public:
 
 private:
 	bool m_bVisible;
+	bool m_bShowHistogram;
 	CEXIFDisplay* m_pEXIFDisplay;
 	CPanel* m_pImageProcPanel;
 	int m_nFileNameHeight;

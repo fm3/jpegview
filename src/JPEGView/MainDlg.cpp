@@ -1482,6 +1482,17 @@ void CMainDlg::ExecuteCommand(int nCommand) {
 			m_pEXIFDisplayCtl->SetActive(!m_pEXIFDisplayCtl->IsActive());
 			m_pNavPanelCtl->GetNavPanel()->GetBtnShowInfo()->SetActive(m_pEXIFDisplayCtl->IsActive());
 			break;
+		case IDM_SHOW_FILEINFO_HISTOGRAM:
+			if (m_pCurrentImage == NULL) {
+				return;
+			}
+			if (m_pEXIFDisplayCtl->IsVisible()) {
+				m_pEXIFDisplayCtl->SetShowHistogram(!m_pEXIFDisplayCtl->GetShowHistogram());
+			} else {
+				m_pEXIFDisplayCtl->SetActive(true);
+				m_pEXIFDisplayCtl->SetShowHistogram(true);
+			}
+			break;
 		case IDM_SHOW_FILENAME:
 			m_bShowFileName = !m_bShowFileName;
 			this->Invalidate(FALSE);

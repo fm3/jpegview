@@ -57,7 +57,8 @@ CEXIFDisplayCtl::CEXIFDisplayCtl(CMainDlg* pMainDlg, CPanel* pImageProcPanel) : 
 	CButtonCtrl* pCloseBtn = m_pEXIFDisplay->GetControl<CButtonCtrl*>(CEXIFDisplay::ID_btnClose);
 	pCloseBtn->SetButtonPressedHandler(&OnClose, this);
 	pCloseBtn->SetShow(false);
-	m_pEXIFDisplay->SetShowHistogram(CSettingsProvider::This().ShowHistogram());
+	m_bShowHistogram = CSettingsProvider::This().ShowHistogram();
+	m_pEXIFDisplay->SetShowHistogram(m_bShowHistogram);
 }
 
 CEXIFDisplayCtl::~CEXIFDisplayCtl() {
@@ -78,6 +79,18 @@ void CEXIFDisplayCtl::SetVisible(bool bVisible) {
 
 void CEXIFDisplayCtl::SetActive(bool bActive) {
 	SetVisible(bActive);
+}
+
+void CEXIFDisplayCtl::SetShowHistogram(bool bShowHistogram) {
+	m_bShowHistogram = bShowHistogram;
+	if (m_bShowHistogram) {
+		::OutputDebugString(_T("show!"));
+	}
+	else {
+		::OutputDebugString(_T("hide!"));
+	}
+	m_pEXIFDisplay->SetShowHistogram(m_bShowHistogram);
+	InvalidateMainDlg();
 }
 
 void CEXIFDisplayCtl::AfterNewImageLoaded() {
