@@ -12,7 +12,7 @@ public:
 	CEXIFDisplayCtl(CMainDlg* pMainDlg, CPanel* pImageProcPanel);
 	virtual ~CEXIFDisplayCtl();
 
-	virtual float DimFactor() { return 0.5f; }
+	virtual float DimFactor() { return 0.65f; }
 
 	virtual bool IsVisible();
 	virtual bool IsActive() { return m_bVisible; }

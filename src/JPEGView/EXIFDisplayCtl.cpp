@@ -240,6 +240,9 @@ void CEXIFDisplayCtl::FillEXIFDataDisplay() {
 				if (pEXIFReader->GetCameraModelPresent()) {
 					m_pEXIFDisplay->AddLine(CNLS::GetString(_T("Camera:")), pEXIFReader->GetCameraModel());
 				}
+				if (pEXIFReader->GetLensModelPresent()) {
+					m_pEXIFDisplay->AddLine(CNLS::GetString(_T("Lens:")), pEXIFReader->GetLensModel());
+				}
 				if (pEXIFReader->GetSoftwarePresent()) {
 					m_pEXIFDisplay->AddLine(CNLS::GetString(_T("Software:")), pEXIFReader->GetSoftware());
 				}
@@ -300,6 +303,18 @@ void CEXIFDisplayCtl::FillEXIFDataDisplay() {
 			if (pFileTime != NULL) {
 				m_pEXIFDisplay->AddLine(CNLS::GetString(_T("Modification date:")), *pFileTime);
 			}
+		}
+	}
+
+	if (CurrentImage()->IsAnimation()) {
+		if (CurrentImage()->NumberOfFrames() != NULL) {
+			CString formattedFrameInfo;
+			CString padding = "";
+			if (CurrentImage()->NumberOfFrames() >= 10 && CurrentImage()->FrameIndex() < 10) {
+				padding = "  ";
+			}
+			formattedFrameInfo.Format(_T("Frame %s%d of %d (%d ms)"), padding, CurrentImage()->FrameIndex(), CurrentImage() ->NumberOfFrames(), CurrentImage()->FrameTimeMs());
+			m_pEXIFDisplay->AddLine(CNLS::GetString(_T("Animation:")), formattedFrameInfo);
 		}
 	}
 

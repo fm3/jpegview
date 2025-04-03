@@ -58,8 +58,10 @@ public:
 	LPCTSTR GetUserComment() { return m_sUserComment; }
 	LPCTSTR GetImageDescription() { return m_sImageDescription; }
 	LPCTSTR GetSoftware() { return m_sSoftware; }
+	LPCTSTR GetLensModel() { return m_sLensModel; }
 	bool GetCameraModelPresent() { return !m_sModel.IsEmpty(); }
 	bool GetSoftwarePresent() { return !m_sSoftware.IsEmpty(); }
+	bool GetLensModelPresent() { return !m_sLensModel.IsEmpty(); }
 	// Date-time the picture was taken
 	const SYSTEMTIME& GetAcquisitionTime() { return m_acqDate; }
 	bool GetAcquisitionTimePresent() { return m_acqDate.wYear > 1600; }
@@ -120,6 +122,7 @@ private:
 	CString m_sUserComment;
 	CString m_sImageDescription;
 	CString m_sSoftware;
+	CString m_sLensModel;
 	SYSTEMTIME m_acqDate;
 	SYSTEMTIME m_dateTime;
 	Rational m_exposureTime;

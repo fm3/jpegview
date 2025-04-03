@@ -529,7 +529,7 @@ LRESULT CMainDlg::OnPaint(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, B
 			visRectZoomNavigator = m_pZoomNavigatorCtl->GetVisibleRect(newSize, clippedSize, offsetsInImage);
 			excludedClippingRects.push_back(m_pZoomNavigatorCtl->PanelRect());
 		}
-
+		
 		m_pPanelMgr->OnPrePaint(dc);
 		m_pPanelMgr->PrepareMemDCMgr(memDCMgr, excludedClippingRects);
 		memDCMgr.ExcludeFromClippingRegion(dc, excludedClippingRects);
@@ -635,7 +635,7 @@ void CMainDlg::PaintToDC(CDC& dc) {
 
 		if (m_pEXIFDisplayCtl->IsVisible()) {
 			m_pEXIFDisplayCtl->OnPrePaintMainDlg(dc);
-			BlendBlackRect(dc, *m_pEXIFDisplayCtl->GetPanel(), 0.5f); 
+			BlendBlackRect(dc, *m_pEXIFDisplayCtl->GetPanel(), 0.5f);
 			m_pEXIFDisplayCtl->OnPaintPanel(dc, CPoint(0, 0));
 		}
 
@@ -769,6 +769,11 @@ LRESULT CMainDlg::OnLButtonDown(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam,
 	bool bEatenByPanel = isCropping ? false : m_pPanelMgr->OnMouseLButton(MouseEvent_BtnDown, pointClicked.x, pointClicked.y);
 
 	if (!bEatenByPanel) {
+		if (m_pCurrentImage == NULL && !isCropping) {
+			OpenFileWithDialog(false, false);
+			return 0;
+		}
+
 		bool bCtrl = (::GetKeyState(VK_CONTROL) & 0x8000) != 0;
 		bool bShift = (::GetKeyState(VK_SHIFT) & 0x8000) != 0;
 
@@ -1776,11 +1781,21 @@ void CMainDlg::ExecuteCommand(int nCommand) {
 		case IDM_TOGGLE_FILL_WITH_CROP_100_PERCENTS:
 			if (m_pCurrentImage != NULL) {
 				double dZoomForFitToScreen = GetZoomFactorForFitToScreen(nCommand == IDM_TOGGLE_FILL_WITH_CROP_100_PERCENTS, true);
-				if (abs(dZoomForFitToScreen - m_dZoom) < 0.001) {
-					ResetZoomTo100Percents(m_bMouseOn);
+				if (dZoomForFitToScreen < 1.0) { // The image is larger than the screen. Always go to fit-to-screen, unless we’re already there.
+					if (abs(dZoomForFitToScreen - m_dZoom) < 0.001) {
+						ResetZoomTo100Percents(m_bMouseOn);
+					}
+					else {
+						ResetZoomToFitScreen(nCommand == IDM_TOGGLE_FILL_WITH_CROP_100_PERCENTS, true, true);
+					}
 				}
-				else {
-					ResetZoomToFitScreen(nCommand == IDM_TOGGLE_FILL_WITH_CROP_100_PERCENTS, true, true);
+				else { // The image is smaller than the screen. Always go to 100%, unless we’re already there.
+					if (abs(m_dZoom - 1.0) < 0.01) {
+						ResetZoomToFitScreen(nCommand == IDM_TOGGLE_FILL_WITH_CROP_100_PERCENTS, true, true);
+					}
+					else {
+						ResetZoomTo100Percents(m_bMouseOn);
+					}
 				}
 			}
 			break;

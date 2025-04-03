@@ -398,6 +398,11 @@ CEXIFReader::CEXIFReader(void* pApp1Block, EImageFormat eImageFormat)
 		m_sUserComment = "";
 	}
 
+	uint8* pTagLensModel = FindTag(pEXIFIFD, pLastEXIF, 0xa434, bLittleEndian);
+	CString sLensModel;
+	ReadStringTag(sLensModel, pTagLensModel, pTIFFHeader, bLittleEndian);
+	m_sLensModel = sLensModel;
+
 	// https://exiv2.org/tags.html
 	// uint8* pTagXPComment = FindTag(pIFD0, pLastIFD0, 0x9c9c, bLittleEndian);  // this is the XPComment tag to resolve this issue https://github.com/sylikc/jpegview/issues/72 , but I'm not sure how to decode it
 
