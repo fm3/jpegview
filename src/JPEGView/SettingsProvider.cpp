@@ -229,6 +229,7 @@ CSettingsProvider::CSettingsProvider(void) {
 	m_colorSlider = GetColor(_T("SliderColor"), RGB(255, 0, 80));
 	m_colorFileName = GetColor(_T("FileNameColor"), m_colorGUI);
 	m_colorTransparency = GetColor(_T("TransparencyColor"), m_colorBackground);
+	m_colorTransparencyFullscreen = GetColor(_T("TransparencyColorFullscreen"), m_colorBackgroundFullscreen);
 
 	m_defaultGUIFont = GetString(_T("DefaultGUIFont"), _T("Default"));
 	m_fileNameFont = GetString(_T("FileNameFont"), _T("Default"));

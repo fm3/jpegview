@@ -32,7 +32,7 @@ CJPEGProvider::~CJPEGProvider(void) {
 }
 
 CJPEGImage* CJPEGProvider::RequestImage(CFileList* pFileList, EReadAheadDirection eDirection,
-                                        LPCTSTR strFileName, int nFrameIndex, const CProcessParams & processParams,
+                                        LPCTSTR strFileName, int nFrameIndex, const CProcessParams & processParams, COLORREF colorTransparency,
                                         bool& bOutOfMemory, bool& bExceptionError) {
 	if (strFileName == NULL) {
 		bOutOfMemory = false;
@@ -49,11 +49,11 @@ CJPEGImage* CJPEGProvider::RequestImage(CFileList* pFileList, EReadAheadDirectio
 
 	if (pRequest == NULL) {
 		// no request pending for this file, add to request queue and start async
-		pRequest = StartNewRequest(strFileName, nFrameIndex, processParams);
+		pRequest = StartNewRequest(strFileName, nFrameIndex, processParams, colorTransparency);
 		// wait with read ahead when direction changed - maybe user just wants to re-see last image
 		if (!bDirectionChanged && eDirection != NONE) {
 			// start parallel if more than one thread
-			StartNewRequestBundle(pFileList, eDirection, processParams, m_nNumThread - 1, NULL);
+			StartNewRequestBundle(pFileList, eDirection, processParams, colorTransparency, m_nNumThread - 1, NULL);
 		}
 	}
 
@@ -91,7 +91,7 @@ CJPEGImage* CJPEGProvider::RequestImage(CFileList* pFileList, EReadAheadDirectio
 		bWasOutOfMemory = true;
 		if (FreeAllPossibleMemory()) {
 			DeleteElement(pRequest);
-			pRequest = StartRequestAndWaitUntilReady(strFileName, nFrameIndex, processParams);
+			pRequest = StartRequestAndWaitUntilReady(strFileName, nFrameIndex, processParams, colorTransparency);
 		}
 	}
 
@@ -101,7 +101,7 @@ CJPEGImage* CJPEGProvider::RequestImage(CFileList* pFileList, EReadAheadDirectio
 
 	// check if we shall start new requests (don't start another request if we are short of memory!)
 	if (m_requestList.size() < (unsigned int)m_nNumBuffers && !bDirectionChanged && !bWasOutOfMemory && eDirection != NONE) {
-		StartNewRequestBundle(pFileList, eDirection, processParams, m_nNumThread, pRequest);
+		StartNewRequestBundle(pFileList, eDirection, processParams, colorTransparency, m_nNumThread, pRequest);
 	}
 
 	bOutOfMemory = pRequest->OutOfMemory;
@@ -205,15 +205,15 @@ CJPEGProvider::CImageRequest* CJPEGProvider::FindRequest(LPCTSTR strFileName, in
 	return NULL;
 }
 
-CJPEGProvider::CImageRequest* CJPEGProvider::StartRequestAndWaitUntilReady(LPCTSTR sFileName, int nFrameIndex, const CProcessParams & processParams) {
-	CImageRequest* pRequest = StartNewRequest(sFileName, nFrameIndex, processParams);
+CJPEGProvider::CImageRequest* CJPEGProvider::StartRequestAndWaitUntilReady(LPCTSTR sFileName, int nFrameIndex, const CProcessParams & processParams, COLORREF colorTransparency) {
+	CImageRequest* pRequest = StartNewRequest(sFileName, nFrameIndex, processParams, colorTransparency);
 	::WaitForSingleObject(pRequest->EventFinished, INFINITE);
 	GetLoadedImageFromWorkThread(pRequest);
 	return pRequest;
 }
 
 void CJPEGProvider::StartNewRequestBundle(CFileList* pFileList, EReadAheadDirection eDirection, 
-										  const CProcessParams & processParams, int nNumRequests, CImageRequest* pLastReadyRequest) {
+										  const CProcessParams & processParams, COLORREF colorTransparency, int nNumRequests, CImageRequest* pLastReadyRequest) {
 	if (nNumRequests == 0 || pFileList == NULL) {
 		return;
 	}
@@ -226,15 +226,15 @@ void CJPEGProvider::StartNewRequestBundle(CFileList* pFileList, EReadAheadDirect
 				// The read ahead threads need this flag to be deleted - we can speculatively process the image with good hit rate
 				CProcessParams paramsCopied = processParams;
 				paramsCopied.ProcFlags = SetProcessingFlag(paramsCopied.ProcFlags, PFLAG_NoProcessingAfterLoad, false);
-				StartNewRequest(sFileName, nFrameIndex, paramsCopied);
+				StartNewRequest(sFileName, nFrameIndex, paramsCopied, colorTransparency);
 			} else {
-				StartNewRequest(sFileName, nFrameIndex, processParams);
+				StartNewRequest(sFileName, nFrameIndex, processParams, colorTransparency);
 			}
 		}
 	}
 }
 
-CJPEGProvider::CImageRequest* CJPEGProvider::StartNewRequest(LPCTSTR sFileName, int nFrameIndex, const CProcessParams & processParams) {
+CJPEGProvider::CImageRequest* CJPEGProvider::StartNewRequest(LPCTSTR sFileName, int nFrameIndex, const CProcessParams & processParams, COLORREF colorTransparency) {
 #ifdef DEBUG
 	::OutputDebugString(_T("Start new request: ")); ::OutputDebugString(sFileName); ::OutputDebugString(_T("\n"));
 #endif
@@ -242,7 +242,7 @@ CJPEGProvider::CImageRequest* CJPEGProvider::StartNewRequest(LPCTSTR sFileName, 
 	m_requestList.push_back(pRequest);
 	pRequest->HandlingThread = SearchThreadForNewRequest();
 	pRequest->Handle = pRequest->HandlingThread->AsyncLoad(pRequest->FileName, nFrameIndex,
-		processParams, m_hHandlerWnd, pRequest->EventFinished);
+		processParams, colorTransparency, m_hHandlerWnd, pRequest->EventFinished);
 	return pRequest;
 }
 
