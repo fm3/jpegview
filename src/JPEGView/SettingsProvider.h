@@ -101,7 +101,7 @@ public:
 	bool DefaultMaximized() { return m_bDefaultMaximized; }
 	bool ExplicitWindowRect() { return m_bExplicitWindowRect; }
 	CSize DefaultFixedCropSize() { return m_DefaultFixedCropSize; }
-	COLORREF ColorBackground() { return m_colorBackground; }
+	COLORREF ColorBackground(int isFullscreen = false) { if (isFullscreen) return m_colorBackgroundFullscreen; else return m_colorBackground; }
 	COLORREF ColorGUI() { return m_colorGUI; }
 	COLORREF ColorHighlight() { return m_colorHighlight; }
 	COLORREF ColorSelected() { return m_colorSelected; }
@@ -272,6 +272,7 @@ private:
 	bool m_bExplicitWindowRect;
 	CSize m_DefaultFixedCropSize;
 	COLORREF m_colorBackground;
+	COLORREF m_colorBackgroundFullscreen;
 	COLORREF m_colorGUI;
 	COLORREF m_colorHighlight;
 	COLORREF m_colorSelected;

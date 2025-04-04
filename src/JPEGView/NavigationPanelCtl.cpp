@@ -241,11 +241,11 @@ void CNavigationPanelCtl::DoNavPanelAnimation() {
 		if (pDIBData != NULL) {
 			if (m_pMemDCAnimation == NULL) {
 				m_pMemDCAnimation = new CDC();
-				m_hOffScreenBitmapAnimation = CPaintMemDCMgr::PrepareRectForMemDCPainting(*m_pMemDCAnimation, screenDC, rectNavPanel);
+				m_hOffScreenBitmapAnimation = CPaintMemDCMgr::PrepareRectForMemDCPainting(*m_pMemDCAnimation, screenDC, rectNavPanel, m_pMainDlg->IsFullScreenMode());
 			}
 
 			CBrush backBrush;
-			backBrush.CreateSolidBrush(CSettingsProvider::This().ColorBackground());
+			backBrush.CreateSolidBrush(CSettingsProvider::This().ColorBackground(m_pMainDlg->IsFullScreenMode()));
 			m_pMemDCAnimation->FillRect(CRect(0, 0, rectNavPanel.Width(), rectNavPanel.Height()), backBrush);
 
 			BITMAPINFO bmInfo{ 0 };

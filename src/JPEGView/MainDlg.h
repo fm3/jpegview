@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "resource.h"
 #include "MessageDef.h"
 #include "ProcessParams.h"
 #include "Helpers.h"

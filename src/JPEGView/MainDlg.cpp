@@ -468,7 +468,7 @@ LRESULT CMainDlg::OnPaint(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, B
 	CRect imageProcessingArea = m_pImageProcPanelCtl->PanelRect();
 	CRectF visRectZoomNavigator(0.0f, 0.0f, 1.0f, 1.0f);
 	CBrush backBrush;
-	backBrush.CreateSolidBrush(CSettingsProvider::This().ColorBackground());
+	backBrush.CreateSolidBrush(CSettingsProvider::This().ColorBackground(m_bFullScreenMode));
 
 #ifdef DEBUG
 	CString a; a.Format(_T("client rect w/h pix: %d %d = %d\n"), m_clientRect.Width(), m_clientRect.Height(), m_clientRect.Width() * m_clientRect.Height());
@@ -478,7 +478,7 @@ LRESULT CMainDlg::OnPaint(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, B
 	std::list<CRect> excludedClippingRects;
 
 	// Panels are handled over memory DCs to eliminate flickering
-	CPaintMemDCMgr memDCMgr(dc);
+	CPaintMemDCMgr memDCMgr(this, dc);
 
 	if (m_pCurrentImage == NULL) {
 		m_pPanelMgr->OnPrePaint(dc);
@@ -599,7 +599,7 @@ LRESULT CMainDlg::OnPaint(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, B
 }
 
 void CMainDlg::PaintToDC(CDC& dc) {
-	COLORREF backColor = CSettingsProvider::This().ColorBackground();
+	COLORREF backColor = CSettingsProvider::This().ColorBackground(m_bFullScreenMode);
 	if (backColor == 0)
 		backColor = RGB(0, 0, 1); // these f**ing nVidia drivers have a bug when blending pure black
 	CBrush backBrush;

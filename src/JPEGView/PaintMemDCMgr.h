@@ -2,6 +2,7 @@
 
 // forward declarations
 class CPanel;
+class CMainDlg;
 
 #define MAX_REGIONS_CPaintMemDCMgr 16
 
@@ -9,7 +10,7 @@ class CPanel;
 // This eliminates flickering.
 class CPaintMemDCMgr {
 public:
-	CPaintMemDCMgr(CPaintDC& paintDC);
+	CPaintMemDCMgr(CMainDlg* pMainDlg, CPaintDC& paintDC);
 	~CPaintMemDCMgr();
 
 	CPaintDC& GetPaintDC() { return m_paintDC; }
@@ -19,7 +20,7 @@ public:
 	static void IncludeIntoClippingRegion(CDC & paintDC, const std::list<CRect>& listExcludedRects);
 
 	// Prepares a memory DC of given size by creating the backing store bitmap and clearing it
-	static HBITMAP PrepareRectForMemDCPainting(CDC & memDC, CDC & paintDC, const CRect& rect);
+	static HBITMAP PrepareRectForMemDCPainting(CDC & memDC, CDC & paintDC, const CRect& rect, const bool isFullscreen);
 
 	// Blits the DIB data section to target DC using dimming (blending with a black bitmap)
 	static void BitBltBlended(CDC & dc, CDC & paintDC, const CSize& dcSize, void* pDIBData, BITMAPINFO* pbmInfo, 
@@ -50,4 +51,6 @@ private:
 	CPaintDC& m_paintDC;
 	int m_nNumElems;
 	CManagedRegion m_managedRegions[MAX_REGIONS_CPaintMemDCMgr];
+
+	CMainDlg* m_pMainDlg;
 };

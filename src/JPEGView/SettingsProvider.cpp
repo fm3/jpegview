@@ -222,6 +222,7 @@ CSettingsProvider::CSettingsProvider(void) {
 	}
 
 	m_colorBackground = GetColor(_T("BackgroundColor"), 0);
+	m_colorBackgroundFullscreen = GetColor(_T("BackgroundColorFullscreen"), m_colorBackground);
 	m_colorGUI = GetColor(_T("GUIColor"), RGB(243, 242, 231));
 	m_colorHighlight = GetColor(_T("HighlightColor"), RGB(255, 205, 0));
 	m_colorSelected = GetColor(_T("SelectionColor"), RGB(255, 205, 0));
