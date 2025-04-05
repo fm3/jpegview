@@ -7,6 +7,8 @@
 #include "ProcessParams.h"
 #include "BasicProcessing.h"
 
+#include <chrono>
+
 CJPEGProvider::CJPEGProvider(HWND handlerWnd, int nNumThreads, int nNumBuffers) {
 	m_hHandlerWnd = handlerWnd;
 	m_nNumThread = nNumThreads;
@@ -34,6 +36,9 @@ CJPEGProvider::~CJPEGProvider(void) {
 CJPEGImage* CJPEGProvider::RequestImage(CFileList* pFileList, EReadAheadDirection eDirection,
                                         LPCTSTR strFileName, int nFrameIndex, const CProcessParams & processParams, COLORREF colorTransparency,
                                         bool& bOutOfMemory, bool& bExceptionError) {
+
+	auto before = std::chrono::high_resolution_clock::now();
+
 	if (strFileName == NULL) {
 		bOutOfMemory = false;
 		bExceptionError = false;
@@ -48,12 +53,13 @@ CJPEGImage* CJPEGProvider::RequestImage(CFileList* pFileList, EReadAheadDirectio
 	m_eOldDirection = eDirection;
 
 	if (pRequest == NULL) {
+		::OutputDebugString(_T("Cache miss for ")); ::OutputDebugString(strFileName); ::OutputDebugString(_T("\n"));
 		// no request pending for this file, add to request queue and start async
 		pRequest = StartNewRequest(strFileName, nFrameIndex, processParams, colorTransparency);
 		// wait with read ahead when direction changed - maybe user just wants to re-see last image
 		if (!bDirectionChanged && eDirection != NONE) {
 			// start parallel if more than one thread
-			StartNewRequestBundle(pFileList, eDirection, processParams, colorTransparency, m_nNumThread - 1, NULL);
+			StartNewRequestBundle(pFileList, eDirection, processParams, colorTransparency, m_nNumThread - 2, NULL);
 		}
 	}
 
@@ -101,11 +107,19 @@ CJPEGImage* CJPEGProvider::RequestImage(CFileList* pFileList, EReadAheadDirectio
 
 	// check if we shall start new requests (don't start another request if we are short of memory!)
 	if (m_requestList.size() < (unsigned int)m_nNumBuffers && !bDirectionChanged && !bWasOutOfMemory && eDirection != NONE) {
-		StartNewRequestBundle(pFileList, eDirection, processParams, colorTransparency, m_nNumThread, pRequest);
+		StartNewRequestBundle(pFileList, eDirection, processParams, colorTransparency, m_nNumThread - 1, pRequest);
 	}
 
 	bOutOfMemory = pRequest->OutOfMemory;
 	bExceptionError = pRequest->ExceptionError;
+
+
+	auto afterRequestImage = std::chrono::high_resolution_clock::now();
+	CString durationStr;
+	long double durationLongDouble = std::chrono::duration_cast<std::chrono::milliseconds>(afterRequestImage - before).count();
+	durationStr.Format(_T("RequestImage took %g ms\n"), durationLongDouble);
+	::OutputDebugString(durationStr);
+
 	return pRequest->Image;
 }
 
@@ -217,12 +231,19 @@ void CJPEGProvider::StartNewRequestBundle(CFileList* pFileList, EReadAheadDirect
 	if (nNumRequests == 0 || pFileList == NULL) {
 		return;
 	}
+	int nNumRequestsBackward = 0;
+	int nNumRequestsForward = nNumRequests;
+	if (nNumRequestsForward > 2) {
+		nNumRequestsBackward = 1;
+		nNumRequestsForward -= nNumRequestsBackward;
+	}
+
 	CString out;
-	out.Format(_T("StartNewRequestBundle for %d requests\n"), nNumRequests);
+	out.Format(_T("StartNewRequestBundle for %d requests (%d inDir, %d oppositeDir)\n"), nNumRequests, nNumRequestsForward, nNumRequestsBackward);
 	::OutputDebugString(out);
 	
 	// in specified direction
-	for (int i = 0; i < nNumRequests; i++) {
+	for (int i = 0; i < nNumRequestsForward; i++) {
 		bool bSwitchImage = true;
 		int nFrameIndex = (pLastReadyRequest != NULL) ? Helpers::GetFrameIndex(pLastReadyRequest->Image, eDirection == FORWARD, true, bSwitchImage) : 0;
 		LPCTSTR sFileName = bSwitchImage ? pFileList->PeekNextPrev(i + 1, eDirection == FORWARD, eDirection == TOGGLE) : pFileList->Current();
@@ -239,8 +260,7 @@ void CJPEGProvider::StartNewRequestBundle(CFileList* pFileList, EReadAheadDirect
 	}
 
 	// in opposite direction
-	int nNumRequestsOppositeDirection = 2;
-	for (int i = 0; i < nNumRequestsOppositeDirection; i++) {
+	for (int i = 0; i < nNumRequestsBackward; i++) {
 		bool bSwitchImage = true;
 		int nFrameIndex = 0;
 		LPCTSTR sFileName = pFileList->PeekNextPrev(i + 1, eDirection == BACKWARD, eDirection == TOGGLE);

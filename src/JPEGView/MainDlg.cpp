@@ -66,8 +66,8 @@ static const double GAMMA_FACTOR = 1.02; // multiplicator for gamma value
 static const double CONTRAST_INC = 0.03; // increment for contrast value
 static const double SHARPEN_INC = 0.05; // increment for sharpen value
 static const double LDC_INC = 0.1; // increment for LDC (lighten shadows and darken highlights)
-static const int NUM_THREADS = 4; // number of readahead threads to use
-static const int READ_AHEAD_BUFFERS = 5; // number of readahead buffers to use (NUM_THREADS+1 is a good choice)
+static const int NUM_THREADS = 5; // number of readahead threads to use
+static const int READ_AHEAD_BUFFERS = 6; // number of readahead buffers to use (NUM_THREADS+1 is a good choice)
 static const int ZOOM_TIMEOUT = 200; // refinement done after this many milliseconds
 static const int ZOOM_TEXT_TIMEOUT = 1000; // zoom label disappears after this many milliseconds
 
@@ -2658,10 +2658,19 @@ void CMainDlg::GotoImage(EImagePosition ePos, int nFlags) {
 		AdjustWindowToImage(false);
 	}
 
-	if (((nFlags & NO_UPDATE_WINDOW) == 0) && !(ePos == POS_NextSlideShow && UseSlideShowTransitionEffect())) {
+	if (((nFlags & NO_UPDATE_WINDOW) == 0) && !(ePos == POS_NextSlideShow && UseSlideShowTransitionEffect())) {		
 		this->Invalidate(FALSE);
+
+		auto beforeUpdateWindow = std::chrono::high_resolution_clock::now();
+
 		// this will force to wait until really redrawn, preventing to process images but do not show them
 		this->UpdateWindow();
+
+		auto afterUpdateWindow = std::chrono::high_resolution_clock::now();
+		CString durationStr2;
+		long double durationLongDouble2 = std::chrono::duration_cast<std::chrono::milliseconds>(afterUpdateWindow - before).count();
+		durationStr2.Format(_T("UpdateWindow took %g ms\n"), durationLongDouble2);
+		::OutputDebugString(durationStr2);
 	}
 
 	// remove key messages accumulated so far
@@ -2670,11 +2679,11 @@ void CMainDlg::GotoImage(EImagePosition ePos, int nFlags) {
 		while (::PeekMessage(&msg, this->m_hWnd, WM_KEYFIRST, WM_KEYLAST, PM_REMOVE));
 	}
 
-	auto afterGotoImage= std::chrono::high_resolution_clock::now();
-	CString durationStr;
-	long double durationLongDouble = std::chrono::duration_cast<std::chrono::milliseconds>(afterGotoImage - before).count();
-	durationStr.Format(_T("GotoImage took %g ms\n"), durationLongDouble);
-	// ::OutputDebugString(durationStr);
+	auto afterGotoImage = std::chrono::high_resolution_clock::now();
+	CString durationStr2;
+	long double durationLongDouble2 = std::chrono::duration_cast<std::chrono::milliseconds>(afterGotoImage - before).count();
+	durationStr2.Format(_T("GotoImage total took %g ms\n"), durationLongDouble2);
+	::OutputDebugString(durationStr2);
 }
 
 void CMainDlg::ReloadImage(bool keepParameters, bool updateWindow) {
