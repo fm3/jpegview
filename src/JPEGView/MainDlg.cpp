@@ -66,8 +66,8 @@ static const double GAMMA_FACTOR = 1.02; // multiplicator for gamma value
 static const double CONTRAST_INC = 0.03; // increment for contrast value
 static const double SHARPEN_INC = 0.05; // increment for sharpen value
 static const double LDC_INC = 0.1; // increment for LDC (lighten shadows and darken highlights)
-static const int NUM_THREADS = 1; // number of readahead threads to use
-static const int READ_AHEAD_BUFFERS = 2; // number of readahead buffers to use (NUM_THREADS+1 is a good choice)
+static const int NUM_THREADS = 4; // number of readahead threads to use
+static const int READ_AHEAD_BUFFERS = 5; // number of readahead buffers to use (NUM_THREADS+1 is a good choice)
 static const int ZOOM_TIMEOUT = 200; // refinement done after this many milliseconds
 static const int ZOOM_TEXT_TIMEOUT = 1000; // zoom label disappears after this many milliseconds
 
@@ -434,7 +434,7 @@ LRESULT CMainDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam
 	CString durationStr;
 	long double durationLongDouble = std::chrono::duration_cast<std::chrono::milliseconds>(afterInitDialog - before).count();
 	durationStr.Format(_T("initDialog took %g ms\n"), durationLongDouble);
-	::OutputDebugString(durationStr);
+	// ::OutputDebugString(durationStr);
 
 	return TRUE;
 }
@@ -588,12 +588,6 @@ LRESULT CMainDlg::OnPaint(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, B
 	m_pPanelMgr->OnPostPaint(dc);
 
 	SetCursorForMoveSection();
-
-	auto afterPaint = std::chrono::high_resolution_clock::now();
-	CString durationStr;
-	long double durationLongDouble = std::chrono::duration_cast<std::chrono::milliseconds>(afterPaint- before).count();
-	durationStr.Format(_T("Paint took %g ms\n"), durationLongDouble);
-	::OutputDebugString(durationStr);
 
 	return 0;
 }
@@ -2148,6 +2142,15 @@ void CMainDlg::ExecuteCommand(int nCommand) {
 void CMainDlg::ToggleFullScreen(CSettingsProvider& sp) {
 	m_bFullScreenMode = !m_bFullScreenMode;
 	m_dZoomAtResizeStart = 1.0;
+	if (sp.ColorTransparency(true) != sp.ColorTransparency(false)) {
+		if (m_pCurrentImage->SourceOriginalChannels() == 4) {
+			// Image has alpha channel. Reload it to blend it with changed ColorTransparency.
+			ReloadImage(false);
+		}
+		// Clear cache because the other images may have alpha so they need to be re-blended too.
+		m_pJPEGProvider->RemoveUnusedImages(true, true);
+	}
+
 	if (!m_bFullScreenMode) {
 		CRect windowRect;
 
@@ -2671,7 +2674,7 @@ void CMainDlg::GotoImage(EImagePosition ePos, int nFlags) {
 	CString durationStr;
 	long double durationLongDouble = std::chrono::duration_cast<std::chrono::milliseconds>(afterGotoImage - before).count();
 	durationStr.Format(_T("GotoImage took %g ms\n"), durationLongDouble);
-	::OutputDebugString(durationStr);
+	// ::OutputDebugString(durationStr);
 }
 
 void CMainDlg::ReloadImage(bool keepParameters, bool updateWindow) {

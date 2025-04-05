@@ -67,6 +67,8 @@ public:
 	// message was received.
 	void OnImageLoadCompleted(int nHandle);
 
+	void RemoveUnusedImages(bool bRemoveAlsoReadAhead, bool bRemoveAll = false);
+
 private:
 	// stores a request for loading and processing a JPEG image
 	struct CImageRequest {
@@ -117,7 +119,6 @@ private:
 	bool WaitForAsyncRequest(int nHandle, int nMessage);
 	void GetLoadedImageFromWorkThread(CImageRequest* pRequest);
 	CImageLoadThread* SearchThreadForNewRequest(void);
-	void RemoveUnusedImages(bool bRemoveAlsoReadAhead);
 	CImageRequest* StartRequestAndWaitUntilReady(LPCTSTR sFileName, int nFrameIndex, const CProcessParams & processParams, COLORREF colorTransparency);
 	CImageRequest* StartNewRequest(LPCTSTR sFileName, int nFrameIndex, const CProcessParams & processParams, COLORREF colorTransparency);
 	void StartNewRequestBundle(CFileList* pFileList, EReadAheadDirection eDirection, const CProcessParams & processParams, COLORREF colorTransparency, int nNumRequests, CImageRequest* pLastReadyRequest);

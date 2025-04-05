@@ -68,6 +68,8 @@ CJPEGImage::CJPEGImage(int nWidth, int nHeight, void* pPixels, void* pEXIFData, 
 	: m_rotationParams{ 0 },
 	m_fColorCorrectionFactorsNull{ 0 }
 {
+	m_nSourceOriginalChannels = nChannels;
+
 	if (nChannels == 3 || nChannels == 4) {
 		m_pOrigPixels = pPixels;
 		m_nOriginalChannels = nChannels;

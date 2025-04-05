@@ -217,6 +217,11 @@ void CJPEGProvider::StartNewRequestBundle(CFileList* pFileList, EReadAheadDirect
 	if (nNumRequests == 0 || pFileList == NULL) {
 		return;
 	}
+	CString out;
+	out.Format(_T("StartNewRequestBundle for %d requests\n"), nNumRequests);
+	::OutputDebugString(out);
+	
+	// in specified direction
 	for (int i = 0; i < nNumRequests; i++) {
 		bool bSwitchImage = true;
 		int nFrameIndex = (pLastReadyRequest != NULL) ? Helpers::GetFrameIndex(pLastReadyRequest->Image, eDirection == FORWARD, true, bSwitchImage) : 0;
@@ -232,11 +237,32 @@ void CJPEGProvider::StartNewRequestBundle(CFileList* pFileList, EReadAheadDirect
 			}
 		}
 	}
+
+	// in opposite direction
+	int nNumRequestsOppositeDirection = 2;
+	for (int i = 0; i < nNumRequestsOppositeDirection; i++) {
+		bool bSwitchImage = true;
+		int nFrameIndex = 0;
+		LPCTSTR sFileName = pFileList->PeekNextPrev(i + 1, eDirection == BACKWARD, eDirection == TOGGLE);
+		if (sFileName != NULL && FindRequest(sFileName, nFrameIndex) == NULL) {
+			if (GetProcessingFlag(PFLAG_NoProcessingAfterLoad, processParams.ProcFlags)) {
+				// The read ahead threads need this flag to be deleted - we can speculatively process the image with good hit rate
+				CProcessParams paramsCopied = processParams;
+				paramsCopied.ProcFlags = SetProcessingFlag(paramsCopied.ProcFlags, PFLAG_NoProcessingAfterLoad, false);
+				StartNewRequest(sFileName, nFrameIndex, paramsCopied, colorTransparency);
+			}
+			else {
+				StartNewRequest(sFileName, nFrameIndex, processParams, colorTransparency);
+			}
+		}
+	}
 }
 
 CJPEGProvider::CImageRequest* CJPEGProvider::StartNewRequest(LPCTSTR sFileName, int nFrameIndex, const CProcessParams & processParams, COLORREF colorTransparency) {
 #ifdef DEBUG
-	::OutputDebugString(_T("Start new request: ")); ::OutputDebugString(sFileName); ::OutputDebugString(_T("\n"));
+	CString out;
+	out.Format(_T("StartNewRequest for %s Frame %d\n"), sFileName, nFrameIndex);
+	::OutputDebugString(out);
 #endif
 	CImageRequest* pRequest = new CImageRequest(sFileName, nFrameIndex);
 	m_requestList.push_back(pRequest);
@@ -285,11 +311,7 @@ CImageLoadThread* CJPEGProvider::SearchThreadForNewRequest(void) {
 	return (pBestOccupiedThread == NULL) ? m_pWorkThreads[0] : pBestOccupiedThread;
 }
 
-void CJPEGProvider::RemoveUnusedImages(bool bRemoveAlsoActiveRequests) {
-	/*if (m_requestList.size() < 50) {
-		// We have plenty memory. Let’s keep more images in cache!
-		return;
-	}*/
+void CJPEGProvider::RemoveUnusedImages(bool bRemoveAlsoActiveRequests, bool bRemoveAll) {
 	bool bRemoved = false;
 	int nTimeStampToRemove = -2;
 	do {
@@ -304,7 +326,7 @@ void CJPEGProvider::RemoveUnusedImages(bool bRemoveAlsoActiveRequests) {
 				}
 				// remove the readahead images - if we get here with read ahead, the strategy was wrong and
 				// the read ahead image is not used.
-				if ((*iter)->AccessTimeStamp == nTimeStampToRemove || IsDestructivelyProcessed((*iter)->Image)) {
+				if ((*iter)->AccessTimeStamp == nTimeStampToRemove || IsDestructivelyProcessed((*iter)->Image) || bRemoveAll) {
 #ifdef DEBUG
 					::OutputDebugString(_T("Delete request: ")); ::OutputDebugString((*iter)->FileName); ::OutputDebugString(_T("\n"));
 #endif
