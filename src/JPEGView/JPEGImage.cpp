@@ -991,6 +991,7 @@ void* CJPEGImage::GetDIBInternal(CSize fullTargetSize, CSize clippingSize, CPoin
 	void * pDIB = NULL;
 	void * pDIBUnsharpMasked = NULL;
 	if (!bMustResampleQuality && !bMustResampleGeometry && !bMustResampleProcessings) {
+		::OutputDebugString(_T("GetDIB: No resizing needed.\n"));
 		// no resizing needed (maybe even nothing must be done)
 		bool bNoChangesLDCandLUTs = ApplyCorrectionLUTandLDC(imageProcParams, eProcFlags, m_pDIBPixelsLUTProcessed, 
 			fullTargetSize, targetOffset, m_pDIBPixels, clippingSize, bMustResampleGeometry, true, false) != NULL;
@@ -998,6 +999,9 @@ void* CJPEGImage::GetDIBInternal(CSize fullTargetSize, CSize clippingSize, CPoin
 		pDIB = ApplyCorrectionLUTandLDC(imageProcParams, eProcFlags, m_pDIBPixelsLUTProcessed, 
 			fullTargetSize, targetOffset, (pDIBUnsharpMasked != NULL) ? pDIBUnsharpMasked : m_pDIBPixels, clippingSize, 
 			bMustResampleGeometry, false, pDIBUnsharpMasked != NULL, bParametersChanged);
+	}
+	else {
+		::OutputDebugString(_T("GetDIB: MUST RESIZE.\n"));
 	}
 	// ApplyCorrectionLUTandLDC() could have failed, then recreate the DIBs
 	if (pDIB == NULL) {

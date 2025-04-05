@@ -384,6 +384,12 @@ LRESULT CMainDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam
 	// create thread pool for processing requests on multiple CPU cores
 	CProcessingThreadPool::This().CreateThreadPoolThreads();
 
+
+	if (sp.DefaultMaximized() && !m_bFullScreenMode) {
+		// maximize *before* loading images, so that the post-loading getDIB already gets the right dimensions.
+		this->ShowWindow(SW_MAXIMIZE);
+	}
+
 	// create JPEG provider and request first image - do no processing yet if not in fullscreen mode (as we do not know the size yet)
 	m_pJPEGProvider = new CJPEGProvider(m_hWnd, NUM_THREADS, READ_AHEAD_BUFFERS);	
 	m_pCurrentImage = m_pJPEGProvider->RequestImage(m_pFileList, CJPEGProvider::FORWARD,
@@ -441,7 +447,6 @@ LRESULT CMainDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam
 
 LRESULT CMainDlg::OnPaint(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
-	auto before = std::chrono::high_resolution_clock::now();
 	static bool s_bFirst = true;
 
 	if (m_bLockPaint) {
@@ -508,6 +513,9 @@ LRESULT CMainDlg::OnPaint(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, B
 		CSize clippedSize(min(m_clientRect.Width(), newSize.cx), min(m_clientRect.Height(), newSize.cy));
 		CPoint offsetsInImage = m_pCurrentImage->ConvertOffset(newSize, clippedSize, m_offsets);
 
+
+		auto beforeDIB = std::chrono::high_resolution_clock::now();
+
 		void* pDIBData;
 		if (m_pUnsharpMaskPanelCtl->IsVisible()) {
 			pDIBData = m_pUnsharpMaskPanelCtl->GetUSMDIBForPreview(clippedSize, offsetsInImage, 
@@ -523,6 +531,12 @@ LRESULT CMainDlg::OnPaint(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, B
 				*m_pImageProcParams, 
 				CreateProcessingFlags(m_bHQResampling && !m_bTemporaryLowQ && !m_bZoomMode, m_bAutoContrast, m_bAutoContrastSection, m_bLDC, false, m_bLandscapeMode));
 		}
+
+		auto afterDIB = std::chrono::high_resolution_clock::now();
+		CString durationStr;
+		long double durationLongDouble2 = std::chrono::duration_cast<std::chrono::milliseconds>(afterDIB - beforeDIB).count();
+		durationStr.Format(_T("OnPaint DIBData took %g ms\n"), durationLongDouble2);
+		::OutputDebugString(durationStr);
 
 		// Zoom navigator - check if visible and create exclusion rectangle
 		if (m_pZoomNavigatorCtl->IsVisible()) {
@@ -543,7 +557,7 @@ LRESULT CMainDlg::OnPaint(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, B
 		}
 		if (m_bZoomMode) m_offsets = unlimitedOffsets;
 	}
-
+	
 	// Restore the old clipping region by adding the excluded rectangles again
 	memDCMgr.IncludeIntoClippingRegion(dc, excludedClippingRects);
 

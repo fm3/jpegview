@@ -1105,6 +1105,8 @@ bool CImageLoadThread::ProcessImageAfterLoad(CRequest * request) {
 		return true;
 	}
 
+	::OutputDebugString(_T("ProcessImageAfterLoad ")); ::OutputDebugString(request->FileName); ::OutputDebugString(_T("\n"));
+
 	int nWidth = request->Image->OrigWidth();
 	int nHeight = request->Image->OrigHeight();
 

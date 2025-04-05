@@ -347,9 +347,7 @@ void CJPEGProvider::RemoveUnusedImages(bool bRemoveAlsoActiveRequests, bool bRem
 				// remove the readahead images - if we get here with read ahead, the strategy was wrong and
 				// the read ahead image is not used.
 				if ((*iter)->AccessTimeStamp == nTimeStampToRemove || IsDestructivelyProcessed((*iter)->Image) || bRemoveAll) {
-#ifdef DEBUG
 					::OutputDebugString(_T("Delete request: ")); ::OutputDebugString((*iter)->FileName); ::OutputDebugString(_T("\n"));
-#endif
 					DeleteElementAt(iter);
 					bRemoved = true;
 					break;
