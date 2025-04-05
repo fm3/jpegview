@@ -66,8 +66,8 @@ static const double GAMMA_FACTOR = 1.02; // multiplicator for gamma value
 static const double CONTRAST_INC = 0.03; // increment for contrast value
 static const double SHARPEN_INC = 0.05; // increment for sharpen value
 static const double LDC_INC = 0.1; // increment for LDC (lighten shadows and darken highlights)
-static const int NUM_THREADS = 5; // number of readahead threads to use
-static const int READ_AHEAD_BUFFERS = 6; // number of readahead buffers to use (NUM_THREADS+1 is a good choice)
+static const int NUM_THREADS = 1; // number of readahead threads to use
+static const int READ_AHEAD_BUFFERS = 2; // number of readahead buffers to use (NUM_THREADS+1 is a good choice)
 static const int ZOOM_TIMEOUT = 200; // refinement done after this many milliseconds
 static const int ZOOM_TEXT_TIMEOUT = 1000; // zoom label disappears after this many milliseconds
 

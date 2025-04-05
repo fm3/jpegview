@@ -59,7 +59,7 @@ CJPEGImage* CJPEGProvider::RequestImage(CFileList* pFileList, EReadAheadDirectio
 		// wait with read ahead when direction changed - maybe user just wants to re-see last image
 		if (!bDirectionChanged && eDirection != NONE) {
 			// start parallel if more than one thread
-			StartNewRequestBundle(pFileList, eDirection, processParams, colorTransparency, m_nNumThread - 2, NULL);
+			StartNewRequestBundle(pFileList, eDirection, processParams, colorTransparency, m_nNumThread - 1, NULL);
 		}
 	}
 
@@ -107,7 +107,7 @@ CJPEGImage* CJPEGProvider::RequestImage(CFileList* pFileList, EReadAheadDirectio
 
 	// check if we shall start new requests (don't start another request if we are short of memory!)
 	if (m_requestList.size() < (unsigned int)m_nNumBuffers && !bDirectionChanged && !bWasOutOfMemory && eDirection != NONE) {
-		StartNewRequestBundle(pFileList, eDirection, processParams, colorTransparency, m_nNumThread - 1, pRequest);
+		StartNewRequestBundle(pFileList, eDirection, processParams, colorTransparency, m_nNumThread, pRequest);
 	}
 
 	bOutOfMemory = pRequest->OutOfMemory;
@@ -233,10 +233,10 @@ void CJPEGProvider::StartNewRequestBundle(CFileList* pFileList, EReadAheadDirect
 	}
 	int nNumRequestsBackward = 0;
 	int nNumRequestsForward = nNumRequests;
-	if (nNumRequestsForward > 2) {
+	/*if (nNumRequestsForward > 2) {
 		nNumRequestsBackward = 1;
 		nNumRequestsForward -= nNumRequestsBackward;
-	}
+	}*/
 
 	CString out;
 	out.Format(_T("StartNewRequestBundle for %d requests (%d inDir, %d oppositeDir)\n"), nNumRequests, nNumRequestsForward, nNumRequestsBackward);
