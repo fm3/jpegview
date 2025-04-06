@@ -69,9 +69,10 @@ public:
 	// message was received.
 	void OnImageLoadCompleted(int nHandle);
 
-	void RemoveUnusedImages(bool bRemoveAlsoReadAhead, bool bRemoveAll = false);
-	void RemoveUnusedImages(CFileList* pFileList, EReadAheadDirection eDirection, void* pLastReadyRequest);
+	void RemoveUnusedImages(CFileList* pFileList, EReadAheadDirection eDirection, bool removeAll, void* pLastReadyRequest);
 	void MarkOldestRequestsAsInactive();
+
+	void StartNewPreloadRequestBundle(CFileList* pFileList, EReadAheadDirection eDirection, const CProcessParams& processParams, COLORREF colorTransparency, void* pLastReadyRequest);
 
 private:
 	// stores a request for loading and processing a JPEG image
@@ -125,7 +126,6 @@ private:
 	CImageLoadThread* SearchThreadForNewRequest(void);
 	CImageRequest* StartRequestAndWaitUntilReady(LPCTSTR sFileName, int nFrameIndex, const CProcessParams & processParams, COLORREF colorTransparency);
 	CImageRequest* StartNewRequest(LPCTSTR sFileName, int nFrameIndex, const CProcessParams & processParams, COLORREF colorTransparency);
-	void StartNewPreloadRequestBundle(CFileList* pFileList, EReadAheadDirection eDirection, const CProcessParams & processParams, COLORREF colorTransparency, CImageRequest* pLastReadyRequest);
 	std::list<std::tuple<LPCTSTR, int>> CJPEGProvider::GetReadAheadFileList(CFileList* pFileList, EReadAheadDirection eDirection, CImageRequest* pLastReadyRequest, int extraPerDirection = 0);
 	CImageRequest* FindRequest(LPCTSTR strFileName, int nFrameIndex);
 	void DeleteElementAt(std::list<CImageRequest*>::iterator iteratorAt); // also deletes the request and the image in the request

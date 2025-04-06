@@ -107,7 +107,7 @@ CJPEGImage* CJPEGProvider::RequestImage(CFileList* pFileList, EReadAheadDirectio
 	}
 
 	// cleanup stuff no longer used
-	RemoveUnusedImages(pFileList, eDirection, pRequest);
+	RemoveUnusedImages(pFileList, eDirection, false, pRequest);
 	MarkOldestRequestsAsInactive();
 
 	// check if we shall start new requests (don't start another request if we are short of memory!)
@@ -246,10 +246,11 @@ std::list<std::tuple<LPCTSTR, int>> CJPEGProvider::GetReadAheadFileList(CFileLis
 	return filesWithFrameIndex;
 }
 
-void CJPEGProvider::StartNewPreloadRequestBundle(CFileList* pFileList, EReadAheadDirection eDirection, const CProcessParams & processParams, COLORREF colorTransparency, CImageRequest* pLastReadyRequest) {
+void CJPEGProvider::StartNewPreloadRequestBundle(CFileList* pFileList, EReadAheadDirection eDirection, const CProcessParams & processParams, COLORREF colorTransparency, void* pLastReadyRequestRaw) {
 	if (pFileList == NULL) {
 		return;
 	}
+	CImageRequest* pLastReadyRequest = reinterpret_cast<CImageRequest*>(pLastReadyRequestRaw);
 	
 	::OutputDebugString(_T("StartNewRequestBundle\n"));
 
@@ -319,7 +320,7 @@ CImageLoadThread* CJPEGProvider::SearchThreadForNewRequest(void) {
 }
 
 
-void CJPEGProvider::RemoveUnusedImages(CFileList* pFileList, EReadAheadDirection eDirection, void* pLastReadyRequestRaw) {
+void CJPEGProvider::RemoveUnusedImages(CFileList* pFileList, EReadAheadDirection eDirection, bool removeAll, void* pLastReadyRequestRaw) {
 	::OutputDebugString(_T("RemoveUnused\n"));
 	CImageRequest* pLastReadyRequest = reinterpret_cast<CImageRequest*>(pLastReadyRequestRaw);
 	int keepExtraPerDirection = 4;
@@ -338,11 +339,13 @@ void CJPEGProvider::RemoveUnusedImages(CFileList* pFileList, EReadAheadDirection
 				}
 			}
 			bool isCurrentImage = pLastReadyRequest != NULL && ((*iter)->FileName == pLastReadyRequest->FileName && (*iter)->FrameIndex == pLastReadyRequest->FrameIndex);
-			if (!isInReadAheadRange && !isCurrentImage && !(*iter)->InUse && !(*iter)->IsActive) {
-				::OutputDebugString(_T("Deleting from cache: ")); ::OutputDebugString((*iter)->FileName); ::OutputDebugString(_T("\n"));
-				DeleteElementAt(iter);
-				bRemoved = true;
-				break;
+			if (!isCurrentImage && !(*iter)->InUse) {
+				if (removeAll || (!isInReadAheadRange && !isCurrentImage && !(*iter)->IsActive)) {
+					::OutputDebugString(_T("Deleting from cache: ")); ::OutputDebugString((*iter)->FileName); ::OutputDebugString(_T("\n"));
+					DeleteElementAt(iter);
+					bRemoved = true;
+					break;
+				}
 			}
 		}
 	} while (bRemoved); // repeat until no element was removed anymore
@@ -370,42 +373,6 @@ void CJPEGProvider::MarkOldestRequestsAsInactive() {
 			MarkOldestRequestsAsInactive();
 		}
 	}
-}
-
-void CJPEGProvider::RemoveUnusedImages(bool bRemoveAlsoActiveRequests, bool bRemoveAll) {
-	bool bRemoved = false;
-	int nTimeStampToRemove = -2;
-	do {
-		bRemoved = false;
-		int nSmallestTimeStamp = INT_MAX;
-		std::list<CImageRequest*>::iterator iter;
-		for (iter = m_requestList.begin( ); iter != m_requestList.end( ); iter++ ) {
-			if ((*iter)->InUse == false && (*iter)->Ready && ((*iter)->IsActive == false || bRemoveAlsoActiveRequests || IsDestructivelyProcessed((*iter)->Image))) {
-				// search element with smallest timestamp
-				if ((*iter)->AccessTimeStamp < nSmallestTimeStamp) {
-					nSmallestTimeStamp = (*iter)->AccessTimeStamp;
-				}
-				// remove the readahead images - if we get here with read ahead, the strategy was wrong and
-				// the read ahead image is not used.
-				if ((*iter)->AccessTimeStamp == nTimeStampToRemove || IsDestructivelyProcessed((*iter)->Image) || bRemoveAll) {
-					::OutputDebugString(_T("Deleting from cache: ")); ::OutputDebugString((*iter)->FileName); ::OutputDebugString(_T("\n"));
-					DeleteElementAt(iter);
-					bRemoved = true;
-					break;
-				}
-			}
-		}
-		nTimeStampToRemove = -2;
-		// Make one buffer free for next readahead (except when bRemoveAlsoActiveRequests)
-		int nMaxListSize = bRemoveAlsoActiveRequests ? (unsigned int)m_nNumBuffers : (unsigned int)m_nNumBuffers - 1;
-		if (m_requestList.size() > (unsigned int)nMaxListSize) {
-			// remove element with smallest timestamp
-			if (nSmallestTimeStamp < INT_MAX) {
-				bRemoved = true;
-				nTimeStampToRemove = nSmallestTimeStamp;
-			}
-		}
-	} while (bRemoved); // repeat until no element could be removed anymore
 }
 
 void CJPEGProvider::DeleteElementAt(std::list<CImageRequest*>::iterator iteratorAt) {

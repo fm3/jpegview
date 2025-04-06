@@ -985,7 +985,7 @@ LRESULT CMainDlg::OnKeyDown(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOO
 		bHandled = true;
 		m_pFileList->SetNavigationMode(Helpers::NM_LoopSubDirectories);
 		GotoImage(POS_Next);
-	} else if (wParam >= '1' && wParam <= '9' && (!bShift || bCtrl)) {
+	} else if (wParam >= '1' && wParam <= '9' && (bShift || bCtrl)) {
 		// Start the slideshow
 		bHandled = true;
 		int nValue = (int)wParam - '1' + 1;
@@ -2144,13 +2144,14 @@ void CMainDlg::ExecuteCommand(int nCommand) {
 void CMainDlg::ToggleFullScreen(CSettingsProvider& sp) {
 	m_bFullScreenMode = !m_bFullScreenMode;
 	m_dZoomAtResizeStart = 1.0;
-	if (sp.ColorTransparency(true) != sp.ColorTransparency(false)) {
+	bool colorTransparencyChanged = sp.ColorTransparency(true) != sp.ColorTransparency(false);
+	if (colorTransparencyChanged) {
 		if (m_pCurrentImage->SourceOriginalChannels() == 4) {
 			// Image has alpha channel. Reload it to blend it with changed ColorTransparency.
 			ReloadImage(false);
 		}
 		// Clear cache because the other images may have alpha so they need to be re-blended too.
-		m_pJPEGProvider->RemoveUnusedImages(true, true);
+		m_pJPEGProvider->RemoveUnusedImages(m_pFileList, CJPEGProvider::FORWARD, true, nullptr);
 	}
 
 	if (!m_bFullScreenMode) {
@@ -2200,6 +2201,9 @@ void CMainDlg::ToggleFullScreen(CSettingsProvider& sp) {
 	m_dZoom = -1;
 	StartLowQTimer(ZOOM_TIMEOUT);
 	this->SetWindowPos(NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOCOPYBITS | SWP_FRAMECHANGED);
+	if (colorTransparencyChanged) {
+		m_pJPEGProvider->StartNewPreloadRequestBundle(m_pFileList, CJPEGProvider::FORWARD, CreateProcessParams(!m_bFullScreenMode), sp.ColorTransparency(m_bFullScreenMode), nullptr);
+	}
 }
 
 // Setting window styles have gotten out of hand with the addition of no title bar
