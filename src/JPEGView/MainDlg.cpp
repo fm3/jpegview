@@ -1788,6 +1788,9 @@ void CMainDlg::ExecuteCommand(int nCommand) {
 				else { // The image is smaller than the screen. Always go to 100%, unless we’re already there.
 					if (abs(m_dZoom - 1.0) < 0.01) {
 						ResetZoomToFitScreen(nCommand == IDM_TOGGLE_FILL_WITH_CROP_100_PERCENTS, true, true);
+						// ResetToFit does not usually show timer. In this zoom-in case let’s show it.
+						m_bInZooming = true;
+						StartLowQTimer(ZOOM_TIMEOUT);
 					}
 					else {
 						ResetZoomTo100Percents(m_bMouseOn);
