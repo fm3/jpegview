@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+﻿#include "StdAfx.h"
 #include "JPEGImage.h"
 #include "BasicProcessing.h"
 #include "XMMImage.h"
@@ -68,6 +68,8 @@ CJPEGImage::CJPEGImage(int nWidth, int nHeight, void* pPixels, void* pEXIFData, 
 	: m_rotationParams{ 0 },
 	m_fColorCorrectionFactorsNull{ 0 }
 {
+	m_nSourceOriginalChannels = nChannels;
+
 	if (nChannels == 3 || nChannels == 4) {
 		m_pOrigPixels = pPixels;
 		m_nOriginalChannels = nChannels;
@@ -197,6 +199,15 @@ CJPEGImage::~CJPEGImage(void) {
 bool CJPEGImage::CanUseLosslessJPEGTransformations() {
 	return m_eImageFormat == IF_JPEG && (m_nOrigWidth % tjMCUWidth[m_eJPEGChromoSampling]) == 0 &&
 		(m_nOrigHeight % tjMCUHeight[m_eJPEGChromoSampling]) == 0;
+}
+
+CString CJPEGImage::GetBlockSizeFormatted() {
+	if (m_eImageFormat == IF_JPEG) {
+		CString formatted;
+		formatted.Format(_T("%d × %d"), tjMCUWidth[m_eJPEGChromoSampling], tjMCUHeight[m_eJPEGChromoSampling]);
+		return formatted;
+	}
+	return _T("");
 }
 
 void CJPEGImage::TrimRectToMCUBlockSize(CRect& rect) {
@@ -600,7 +611,10 @@ void* CJPEGImage::Resample(CSize fullTargetSize, CSize clippingSize, CPoint targ
 
 	if (fullTargetSize.cx > 65535 || fullTargetSize.cy > 65535) return NULL;
 
-	if (GetProcessingFlag(eProcFlags, PFLAG_HighQualityResampling) && 
+	// MOD: no HQ resampling on upsample. Should really be a config option.
+	bool bUseHQResampling = GetProcessingFlag(eProcFlags, PFLAG_HighQualityResampling) && eResizeType == DownSample;
+
+	if (bUseHQResampling &&
 		!(eResizeType == NoResize && (filter == Filter_Downsampling_Best_Quality || filter == Filter_Downsampling_No_Aliasing))) {
 		if (SupportsSIMD(cpu)) {
 			if (eResizeType == UpSample) {

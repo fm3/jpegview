@@ -162,7 +162,8 @@
 #define IDM_TOUCH_IMAGE_EXIF_FOLDER 2720		// :KeyMap: set modification time to EXIF time for all images in folder
 #define IDM_SET_WALLPAPER_ORIG 2770		// :KeyMap: Set original image file as desktop wallpaper
 #define IDM_SET_WALLPAPER_DISPLAY 2774		// :KeyMap: Set image as displayed as desktop wallpaper
-#define IDM_SHOW_FILEINFO   2800		// :KeyMap: toggle show file and EXIF info box in top, left corner
+#define IDM_SHOW_FILEINFO   2800		// :KeyMap: toggle show file and EXIF info box in top-left corner
+#define IDM_SHOW_FILEINFO_HISTOGRAM 2830  // :KeyMap: toggle show details and histogram in EXIF info box in top-left corner
 #define IDM_SHOW_FILENAME	3000		// :KeyMap: toggle show file name on top of screen
 #define IDM_SHOW_NAVPANEL   3100		// :KeyMap: toggle show navigation panel
 #define IDM_NEXT			4000		// :KeyMap: go to next image
@@ -258,6 +259,8 @@
 #define IDM_AUTO_ZOOM_FILL_NO_ZOOM	12510		// :KeyMap: set auto zoom mode fill screen, never zoom
 #define IDM_AUTO_ZOOM_FIT	12520		// :KeyMap: set auto zoom mode fit to screen
 #define IDM_AUTO_ZOOM_FILL	12530		// :KeyMap: set auto zoom mode fill screen
+#define IDM_EDIT_GLOBAL_KEYMAP 12590		// :KeyMap: edit global keymap
+#define IDM_EDIT_USER_KEYMAP   12695		// :KeyMap: edit user keymap
 #define IDM_EDIT_GLOBAL_CONFIG 12600		// :KeyMap: edit global configuration
 #define IDM_EDIT_USER_CONFIG   12610		// :KeyMap: edit user configuration
 #define IDM_MANAGE_OPEN_WITH_MENU 12612
@@ -321,18 +324,26 @@
 
 // in the main menu
 // these position must be changed if menu items are inserted
-#define SUBMENU_POS_OPENWITH 3
-#define SUBMENU_POS_MODDATE 9
-#define SUBMENU_POS_WALLPAPER 10
-#define SUBMENU_POS_NAVIGATION 23
-#define SUBMENU_POS_DISPLAY_ORDER 24
-#define SUBMENU_POS_MOVIE 25
-#define SUBMENU_POS_TRANSFORM 27
-#define SUBMENU_POS_TRANSFORM_LOSSLESS 28
-#define SUBMENU_POS_ZOOM 36
-#define SUBMENU_POS_AUTOZOOMMODE 37
-#define SUBMENU_POS_SETTINGS 39
-#define SUBMENU_POS_USER_COMMANDS 41
+#define SUBMENU_POS_OPENWITH 2
+#define SUBMENU_POS_WALLPAPER 7
+#define SUBMENU_POS_NAVIGATION 11
+#define SUBMENU_POS_ZOOM 12
+#define SUBMENU_POS_MODIFY 13
+#define SUBMENU_POS_USER_COMMANDS 14
+#define SUBMENU_POS_SETTINGS 16
+
+// in modify menu
+#define SUBMENU_POS_MODIFY_MODDATE 6
+#define SUBMENU_POS_TRANSFORM 2
+#define SUBMENU_POS_TRANSFORM_LOSSLESS 3
+
+// in navigation menu
+#define SUBMENU_POS_NAVIGATION_LOOP 6
+#define SUBMENU_POS_DISPLAY_ORDER 7
+#define SUBMENU_POS_SLIDESHOW 8
+
+// in zoom menu
+#define SUBMENU_POS_AUTOZOOMMODE 15
 
 // in the crop menu
 #define SUBMENU_POS_CROPMODE 3

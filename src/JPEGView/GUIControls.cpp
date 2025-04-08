@@ -466,7 +466,7 @@ void CButtonCtrl::Draw(CDC & dc, CRect position, bool bBlack) {
 		hPen = ::CreatePen(PS_SOLID, 1, (m_bDragging && m_bHighlight) ? CSettingsProvider::This().ColorHighlight() : m_bActive ? CSettingsProvider::This().ColorSelected() : CSettingsProvider::This().ColorGUI());
 		hOldPen = dc.SelectPen(hPen);
 	}
-	HelpersGUI::DrawRectangle(dc, position);
+	// HelpersGUI::DrawRectangle(dc, position);
 	if (m_sText.GetLength() > 0) {
 		HelpersGUI::SelectDefaultGUIFont(dc);
 		dc.SetBkMode(TRANSPARENT);

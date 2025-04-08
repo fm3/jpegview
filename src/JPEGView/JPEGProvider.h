@@ -1,5 +1,7 @@
 #pragma once
 
+#include <set>
+
 class CJPEGImage;
 class CImageLoadThread;
 class CFileList;
@@ -40,7 +42,7 @@ public:
 	// blocks until the image is ready. If not specified otherwise, a read-ahead request for the next image is
 	// created automatically so that the next image will be ready immediately when requested in the future.
 	CJPEGImage* RequestImage(CFileList* pFileList, EReadAheadDirection eDirection, LPCTSTR strFileName, int nFrameIndex,
-		const CProcessParams & processParams, bool& bOutOfMemory, bool& bExceptionError);
+		const CProcessParams & processParams, COLORREF colorTransparency, bool& bOutOfMemory, bool& bExceptionError);
 
 	// Notifies that the specified image is no longer used and its memory can be freed.
 	// The CJPEGProvider class may decide to keep the image cached.
@@ -66,6 +68,11 @@ public:
 	// Must be called by the message handler window (see constructor) when the WM_IMAGE_LOAD_COMPLETED
 	// message was received.
 	void OnImageLoadCompleted(int nHandle);
+
+	void RemoveUnusedImages(CFileList* pFileList, EReadAheadDirection eDirection, bool removeAll, void* pLastReadyRequest);
+	void MarkOldestRequestsAsInactive();
+
+	void StartNewPreloadRequestBundle(CFileList* pFileList, EReadAheadDirection eDirection, const CProcessParams& processParams, COLORREF colorTransparency, void* pLastReadyRequest);
 
 private:
 	// stores a request for loading and processing a JPEG image
@@ -117,12 +124,10 @@ private:
 	bool WaitForAsyncRequest(int nHandle, int nMessage);
 	void GetLoadedImageFromWorkThread(CImageRequest* pRequest);
 	CImageLoadThread* SearchThreadForNewRequest(void);
-	void RemoveUnusedImages(bool bRemoveAlsoReadAhead);
-	CImageRequest* StartRequestAndWaitUntilReady(LPCTSTR sFileName, int nFrameIndex, const CProcessParams & processParams);
-	CImageRequest* StartNewRequest(LPCTSTR sFileName, int nFrameIndex, const CProcessParams & processParams);
-	void StartNewRequestBundle(CFileList* pFileList, EReadAheadDirection eDirection, const CProcessParams & processParams, int nNumRequests, CImageRequest* pLastReadyRequest);
+	CImageRequest* StartRequestAndWaitUntilReady(LPCTSTR sFileName, int nFrameIndex, const CProcessParams & processParams, COLORREF colorTransparency);
+	CImageRequest* StartNewRequest(LPCTSTR sFileName, int nFrameIndex, const CProcessParams & processParams, COLORREF colorTransparency);
+	std::list<std::tuple<LPCTSTR, int>> CJPEGProvider::GetReadAheadFileList(CFileList* pFileList, EReadAheadDirection eDirection, CImageRequest* pLastReadyRequest, int extraPerDirection = 0);
 	CImageRequest* FindRequest(LPCTSTR strFileName, int nFrameIndex);
-	void ClearOldestInactiveRequest();
 	void DeleteElementAt(std::list<CImageRequest*>::iterator iteratorAt); // also deletes the request and the image in the request
 	void DeleteElement(CImageRequest* pRequest);
 	bool IsDestructivelyProcessed(CJPEGImage* pImage);

@@ -101,13 +101,13 @@ public:
 	bool DefaultMaximized() { return m_bDefaultMaximized; }
 	bool ExplicitWindowRect() { return m_bExplicitWindowRect; }
 	CSize DefaultFixedCropSize() { return m_DefaultFixedCropSize; }
-	COLORREF ColorBackground() { return m_colorBackground; }
+	COLORREF ColorBackground(int bIsFullscreen = false) { if (bIsFullscreen) return m_colorBackgroundFullscreen; else return m_colorBackground; }
 	COLORREF ColorGUI() { return m_colorGUI; }
 	COLORREF ColorHighlight() { return m_colorHighlight; }
 	COLORREF ColorSelected() { return m_colorSelected; }
 	COLORREF ColorSlider() { return m_colorSlider; }
 	COLORREF ColorFileName() { return m_colorFileName; }
-	COLORREF ColorTransparency() { return m_colorTransparency; }
+	COLORREF ColorTransparency(int bIsFullscreen = false) { if (bIsFullscreen) return m_colorTransparencyFullscreen; else return m_colorTransparency; }
 	LPCTSTR DefaultGUIFont() { return m_defaultGUIFont; }
 	LPCTSTR FileNameFont() { return m_fileNameFont; }
 	const CUnsharpMaskParams& UnsharpMaskParams() { return m_unsharpMaskParms; }
@@ -272,12 +272,14 @@ private:
 	bool m_bExplicitWindowRect;
 	CSize m_DefaultFixedCropSize;
 	COLORREF m_colorBackground;
+	COLORREF m_colorBackgroundFullscreen;
 	COLORREF m_colorGUI;
 	COLORREF m_colorHighlight;
 	COLORREF m_colorSelected;
 	COLORREF m_colorSlider;
 	COLORREF m_colorFileName;
 	COLORREF m_colorTransparency;
+	COLORREF m_colorTransparencyFullscreen;
 	CString m_defaultGUIFont;
 	CString m_fileNameFont;
 	CUnsharpMaskParams m_unsharpMaskParms;

@@ -26,22 +26,22 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -330,6 +330,7 @@
     <ClCompile Include="LocalDensityCorr.cpp" />
     <ClCompile Include="ManageOpenWithDlg.cpp" />
     <ClCompile Include="MultiMonitorSupport.cpp" />
+    <ClCompile Include="FileOpenDialog.cpp" />
     <ClCompile Include="NLS.cpp" />
     <ClCompile Include="ParameterDB.cpp" />
     <ClCompile Include="PNGWrapper.cpp" />
@@ -386,7 +387,6 @@
     <ClCompile Include="BatchCopyDlg.cpp" />
     <ClCompile Include="CropCtl.cpp" />
     <ClCompile Include="CropSizeDlg.cpp" />
-    <ClCompile Include="FileOpenDialog.cpp" />
     <ClCompile Include="MainDlg.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -423,6 +423,7 @@
     <ClInclude Include="MaxImageDef.h" />
     <ClInclude Include="MessageDef.h" />
     <ClInclude Include="MultiMonitorSupport.h" />
+    <ClInclude Include="FileOpenDialog.h" />
     <ClInclude Include="NLS.h" />
     <ClInclude Include="ParameterDB.h" />
     <ClInclude Include="PNGWrapper.h" />
@@ -477,7 +478,6 @@
     <ClInclude Include="BatchCopyDlg.h" />
     <ClInclude Include="CropCtl.h" />
     <ClInclude Include="CropSizeDlg.h" />
-    <ClInclude Include="FileOpenDialog.h" />
     <ClInclude Include="MainDlg.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>

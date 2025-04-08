@@ -7,6 +7,8 @@
 #include "MainDlg.h"
 #include "SettingsProvider.h"
 
+#include <chrono>
+
 #ifdef DEBUG
 #include <dbghelp.h>
 #endif
@@ -186,6 +188,7 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 
 	::SetUnhandledExceptionFilter(CrashHandler);
 #endif
+	auto start = std::chrono::high_resolution_clock::now();
 
 	// use the locale from the operating system, however for numeric input/output always use 'C' locale
 	// with the OS locale the INI file can not be read correctly (due to the different decimal point characters)
@@ -242,6 +245,11 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 		dlgMain.SetStartupInfo(sStartupFile, nAutostartSlideShow, eSorting, eTransitionEffect, nTransitionTime, bAutoExit, nDisplayMonitor);
 
 		try {
+			auto afterInit = std::chrono::high_resolution_clock::now();
+			CString durationStr;
+			long double durationLongDouble = std::chrono::duration_cast<std::chrono::milliseconds>(afterInit - start).count();
+			durationStr.Format(_T("init took %g ms\n"), durationLongDouble);
+			::OutputDebugString(durationStr);
 			nRet = (int)dlgMain.DoModal();
 			if (CSettingsProvider::This().StickyWindowSize() && !dlgMain.IsFullScreenMode()) {
 				CSettingsProvider::This().SaveStickyWindowRect(dlgMain.WindowRectOnClose());

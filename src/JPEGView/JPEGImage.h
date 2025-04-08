@@ -179,6 +179,8 @@ public:
 	// Checks if this is a JPEG image and if the dimension of this image is dividable by the JPEG block size used.
 	bool CanUseLosslessJPEGTransformations();
 
+	CString GetBlockSizeFormatted();
+
 	// Trims the given rectangle to MCU block size of this image (allowing lossless JPEG transformations)
 	void TrimRectToMCUBlockSize(CRect& rect);
 
@@ -205,6 +207,9 @@ public:
 
 	// returns the number of channels in the OriginalPixels (3 or 4, corresponding to 24 bpp and 32 bpp)
 	int OriginalChannels() const { return m_nOriginalChannels; }
+
+	// returns the number of channels in the OriginalPixels (3 or 4, corresponding to 24 bpp and 32 bpp)
+	int SourceOriginalChannels() const { return m_nSourceOriginalChannels; }
 
 	// raw access to DIB pixels with no LUT applied - do not delete or store the returned pointer
 	// note that this DIB can be NULL due to optimization if currently only the processed DIB is maintained
@@ -357,6 +362,7 @@ private:
 	int m_nOrigWidth, m_nOrigHeight; // these may changes by rotation
 	int m_nInitOrigWidth, m_nInitOrigHeight; // original width of image when constructed (before any rotation and crop)
 	int m_nOriginalChannels;
+	int m_nSourceOriginalChannels;
 	__int64 m_nPixelHash;
 	EImageFormat m_eImageFormat;
 	TJSAMP m_eJPEGChromoSampling;

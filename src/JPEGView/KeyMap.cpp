@@ -153,6 +153,24 @@ static CString _GetKeyShortcutName(int nShortcut) {
 	return sKeyDesc;
 }
 
+CString CKeyMap::UserKeymapFileName() {
+	return CString(Helpers::JPEGViewAppDataPath()) + KEYMAP_USER_FILE_NAME;
+}
+
+CString CKeyMap::GlobalKeymapFileName() {
+	// Not the template, but the keymap file in exe dir.
+	return CString(CSettingsProvider::This().GetEXEPath()) + KEYMAP_USER_FILE_NAME;
+}
+
+bool CKeyMap::ExistsUserKeyMap() {
+	return ::GetFileAttributes(UserKeymapFileName()) != INVALID_FILE_ATTRIBUTES;
+}
+
+void CKeyMap::CopyUserKeymapFromTemplate() {
+	CString sTemplateFileName = CString(CSettingsProvider::This().GetEXEPath()) + KEYMAP_DEFAULT_FILE_NAME;
+	::CopyFile(sTemplateFileName, UserKeymapFileName(), TRUE);
+}
+
 // Similar to SettingsProvider, attemps to load the keymap from various locations
 // before settling for the default
 //

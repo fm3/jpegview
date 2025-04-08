@@ -7,6 +7,12 @@
 #include "ProcessParams.h"
 #include "BasicProcessing.h"
 
+#include <chrono>
+
+int READ_AHEAD_RANGE_IN_DIRECTION = 2;
+int READ_AHEAD_RANGE_OPPOSITE_DIRECTION = 1;
+int READ_AHEAD_RANGE_KEEP_EXTRA = 4;
+
 CJPEGProvider::CJPEGProvider(HWND handlerWnd, int nNumThreads, int nNumBuffers) {
 	m_hHandlerWnd = handlerWnd;
 	m_nNumThread = nNumThreads;
@@ -32,8 +38,9 @@ CJPEGProvider::~CJPEGProvider(void) {
 }
 
 CJPEGImage* CJPEGProvider::RequestImage(CFileList* pFileList, EReadAheadDirection eDirection,
-                                        LPCTSTR strFileName, int nFrameIndex, const CProcessParams & processParams,
+                                        LPCTSTR strFileName, int nFrameIndex, const CProcessParams & processParams, COLORREF colorTransparency,
                                         bool& bOutOfMemory, bool& bExceptionError) {
+
 	if (strFileName == NULL) {
 		bOutOfMemory = false;
 		bExceptionError = false;
@@ -48,13 +55,17 @@ CJPEGImage* CJPEGProvider::RequestImage(CFileList* pFileList, EReadAheadDirectio
 	m_eOldDirection = eDirection;
 
 	if (pRequest == NULL) {
+		::OutputDebugString(_T("RequestImage cache miss for ")); ::OutputDebugString(strFileName); ::OutputDebugString(_T("\n"));
 		// no request pending for this file, add to request queue and start async
-		pRequest = StartNewRequest(strFileName, nFrameIndex, processParams);
+		pRequest = StartNewRequest(strFileName, nFrameIndex, processParams, colorTransparency);
+		
+		/*
 		// wait with read ahead when direction changed - maybe user just wants to re-see last image
 		if (!bDirectionChanged && eDirection != NONE) {
 			// start parallel if more than one thread
-			StartNewRequestBundle(pFileList, eDirection, processParams, m_nNumThread - 1, NULL);
+			StartNewRequestBundle(pFileList, eDirection, processParams, colorTransparency, 3, NULL);
 		}
+		*/
 	}
 
 	// wait for request if not yet ready
@@ -91,21 +102,22 @@ CJPEGImage* CJPEGProvider::RequestImage(CFileList* pFileList, EReadAheadDirectio
 		bWasOutOfMemory = true;
 		if (FreeAllPossibleMemory()) {
 			DeleteElement(pRequest);
-			pRequest = StartRequestAndWaitUntilReady(strFileName, nFrameIndex, processParams);
+			pRequest = StartRequestAndWaitUntilReady(strFileName, nFrameIndex, processParams, colorTransparency);
 		}
 	}
 
 	// cleanup stuff no longer used
-	RemoveUnusedImages(bRemoveAlsoActiveRequests);
-	ClearOldestInactiveRequest();
+	RemoveUnusedImages(pFileList, eDirection, false, pRequest);
+	MarkOldestRequestsAsInactive();
 
 	// check if we shall start new requests (don't start another request if we are short of memory!)
-	if (m_requestList.size() < (unsigned int)m_nNumBuffers && !bDirectionChanged && !bWasOutOfMemory && eDirection != NONE) {
-		StartNewRequestBundle(pFileList, eDirection, processParams, m_nNumThread, pRequest);
+	if (!bWasOutOfMemory) {
+		StartNewPreloadRequestBundle(pFileList, eDirection, processParams, colorTransparency, pRequest);
 	}
 
 	bOutOfMemory = pRequest->OutOfMemory;
 	bExceptionError = pRequest->ExceptionError;
+
 	return pRequest->Image;
 }
 
@@ -205,44 +217,66 @@ CJPEGProvider::CImageRequest* CJPEGProvider::FindRequest(LPCTSTR strFileName, in
 	return NULL;
 }
 
-CJPEGProvider::CImageRequest* CJPEGProvider::StartRequestAndWaitUntilReady(LPCTSTR sFileName, int nFrameIndex, const CProcessParams & processParams) {
-	CImageRequest* pRequest = StartNewRequest(sFileName, nFrameIndex, processParams);
+CJPEGProvider::CImageRequest* CJPEGProvider::StartRequestAndWaitUntilReady(LPCTSTR sFileName, int nFrameIndex, const CProcessParams & processParams, COLORREF colorTransparency) {
+	CImageRequest* pRequest = StartNewRequest(sFileName, nFrameIndex, processParams, colorTransparency);
 	::WaitForSingleObject(pRequest->EventFinished, INFINITE);
 	GetLoadedImageFromWorkThread(pRequest);
 	return pRequest;
 }
 
-void CJPEGProvider::StartNewRequestBundle(CFileList* pFileList, EReadAheadDirection eDirection, 
-										  const CProcessParams & processParams, int nNumRequests, CImageRequest* pLastReadyRequest) {
-	if (nNumRequests == 0 || pFileList == NULL) {
-		return;
-	}
-	for (int i = 0; i < nNumRequests; i++) {
+std::list<std::tuple<LPCTSTR, int>> CJPEGProvider::GetReadAheadFileList(CFileList* pFileList, EReadAheadDirection eDirection, CImageRequest* pLastReadyRequest, int extraPerDirection) {
+	// TODO priority
+	std::list<std::tuple<LPCTSTR, int>> filesWithFrameIndex{};
+	for (int i = 0; i < READ_AHEAD_RANGE_IN_DIRECTION + extraPerDirection; i++) {
 		bool bSwitchImage = true;
 		int nFrameIndex = (pLastReadyRequest != NULL) ? Helpers::GetFrameIndex(pLastReadyRequest->Image, eDirection == FORWARD, true, bSwitchImage) : 0;
 		LPCTSTR sFileName = bSwitchImage ? pFileList->PeekNextPrev(i + 1, eDirection == FORWARD, eDirection == TOGGLE) : pFileList->Current();
-		if (sFileName != NULL && FindRequest(sFileName, nFrameIndex) == NULL) {
+		if (sFileName != NULL) {
+			filesWithFrameIndex.push_back({ sFileName, nFrameIndex });
+		}
+	}
+	for (int i = 0; i < READ_AHEAD_RANGE_OPPOSITE_DIRECTION + extraPerDirection; i++) {
+		bool bSwitchImage = true;
+		int nFrameIndex = (pLastReadyRequest != NULL) ? Helpers::GetFrameIndex(pLastReadyRequest->Image, eDirection == BACKWARD, true, bSwitchImage) : 0;
+		LPCTSTR sFileName = bSwitchImage ? pFileList->PeekNextPrev(i + 1, eDirection == BACKWARD, eDirection == TOGGLE) : pFileList->Current();
+		if (sFileName != NULL) {
+			filesWithFrameIndex.push_back({ sFileName, nFrameIndex });
+		}
+	}
+	return filesWithFrameIndex;
+}
+
+void CJPEGProvider::StartNewPreloadRequestBundle(CFileList* pFileList, EReadAheadDirection eDirection, const CProcessParams & processParams, COLORREF colorTransparency, void* pLastReadyRequestRaw) {
+	if (pFileList == NULL) {
+		return;
+	}
+	CImageRequest* pLastReadyRequest = reinterpret_cast<CImageRequest*>(pLastReadyRequestRaw);
+	
+	::OutputDebugString(_T("StartNewRequestBundle\n"));
+
+	std::list<std::tuple<LPCTSTR, int>> filesWithFrameIndex = GetReadAheadFileList(pFileList, eDirection, pLastReadyRequest);
+
+	for (auto [sFileName, nFrameIndex] : filesWithFrameIndex) {
+		if (FindRequest(sFileName, nFrameIndex) == NULL) {
 			if (GetProcessingFlag(PFLAG_NoProcessingAfterLoad, processParams.ProcFlags)) {
 				// The read ahead threads need this flag to be deleted - we can speculatively process the image with good hit rate
 				CProcessParams paramsCopied = processParams;
 				paramsCopied.ProcFlags = SetProcessingFlag(paramsCopied.ProcFlags, PFLAG_NoProcessingAfterLoad, false);
-				StartNewRequest(sFileName, nFrameIndex, paramsCopied);
+				StartNewRequest(sFileName, nFrameIndex, paramsCopied, colorTransparency);
 			} else {
-				StartNewRequest(sFileName, nFrameIndex, processParams);
+				StartNewRequest(sFileName, nFrameIndex, processParams, colorTransparency);
 			}
 		}
 	}
 }
 
-CJPEGProvider::CImageRequest* CJPEGProvider::StartNewRequest(LPCTSTR sFileName, int nFrameIndex, const CProcessParams & processParams) {
-#ifdef DEBUG
-	::OutputDebugString(_T("Start new request: ")); ::OutputDebugString(sFileName); ::OutputDebugString(_T("\n"));
-#endif
+CJPEGProvider::CImageRequest* CJPEGProvider::StartNewRequest(LPCTSTR sFileName, int nFrameIndex, const CProcessParams & processParams, COLORREF colorTransparency) {
 	CImageRequest* pRequest = new CImageRequest(sFileName, nFrameIndex);
+	::OutputDebugString(_T("StartNewRequest: ")); ::OutputDebugString(sFileName); ::OutputDebugString(_T("\n"));
 	m_requestList.push_back(pRequest);
 	pRequest->HandlingThread = SearchThreadForNewRequest();
 	pRequest->Handle = pRequest->HandlingThread->AsyncLoad(pRequest->FileName, nFrameIndex,
-		processParams, m_hHandlerWnd, pRequest->EventFinished);
+		processParams, colorTransparency, m_hHandlerWnd, pRequest->EventFinished);
 	return pRequest;
 }
 
@@ -285,50 +319,44 @@ CImageLoadThread* CJPEGProvider::SearchThreadForNewRequest(void) {
 	return (pBestOccupiedThread == NULL) ? m_pWorkThreads[0] : pBestOccupiedThread;
 }
 
-void CJPEGProvider::RemoveUnusedImages(bool bRemoveAlsoActiveRequests) {
+
+void CJPEGProvider::RemoveUnusedImages(CFileList* pFileList, EReadAheadDirection eDirection, bool removeAll, void* pLastReadyRequestRaw) {
+	::OutputDebugString(_T("RemoveUnused\n"));
+	CImageRequest* pLastReadyRequest = reinterpret_cast<CImageRequest*>(pLastReadyRequestRaw);
+	int keepExtraPerDirection = 4;
+	std::list<std::tuple<LPCTSTR, int>> readAheadRange = GetReadAheadFileList(pFileList, eDirection, reinterpret_cast<CImageRequest*>(pLastReadyRequest), keepExtraPerDirection);
+	std::list<CImageRequest*>::iterator iter;
+	auto compare = [](std::tuple<LPCTSTR, int> a, std::tuple<LPCTSTR, int> b) { return lstrcmp(std::get<0>(a), std::get<0>(b)) && std::get<1>(a) == std::get<1>(b); };
 	bool bRemoved = false;
-	int nTimeStampToRemove = -2;
-	do {
+	do { // Wrapped in a loop because we have to break iterating when deleting element, as it breaks the iterator.
 		bRemoved = false;
-		int nSmallestTimeStamp = INT_MAX;
-		std::list<CImageRequest*>::iterator iter;
-		for (iter = m_requestList.begin( ); iter != m_requestList.end( ); iter++ ) {
-			if ((*iter)->InUse == false && (*iter)->Ready && ((*iter)->IsActive == false || bRemoveAlsoActiveRequests || IsDestructivelyProcessed((*iter)->Image))) {
-				// search element with smallest timestamp
-				if ((*iter)->AccessTimeStamp < nSmallestTimeStamp) {
-					nSmallestTimeStamp = (*iter)->AccessTimeStamp;
+		for (iter = m_requestList.begin(); iter != m_requestList.end(); iter++) {
+			bool isInReadAheadRange = false;
+			for (auto [fileName, frameIndex] : readAheadRange) {
+				if ((*iter)->FileName == fileName && (*iter)->FrameIndex == frameIndex) {
+					isInReadAheadRange = true;
+					break;
 				}
-				// remove the readahead images - if we get here with read ahead, the strategy was wrong and
-				// the read ahead image is not used.
-				if ((*iter)->AccessTimeStamp == nTimeStampToRemove || IsDestructivelyProcessed((*iter)->Image)) {
-#ifdef DEBUG
-					::OutputDebugString(_T("Delete request: ")); ::OutputDebugString((*iter)->FileName); ::OutputDebugString(_T("\n"));
-#endif
+			}
+			bool isCurrentImage = pLastReadyRequest != NULL && ((*iter)->FileName == pLastReadyRequest->FileName && (*iter)->FrameIndex == pLastReadyRequest->FrameIndex);
+			if (!isCurrentImage && !(*iter)->InUse) {
+				if (removeAll || (!isInReadAheadRange && !isCurrentImage && !(*iter)->IsActive)) {
+					::OutputDebugString(_T("Deleting from cache: ")); ::OutputDebugString((*iter)->FileName); ::OutputDebugString(_T("\n"));
 					DeleteElementAt(iter);
 					bRemoved = true;
 					break;
 				}
 			}
 		}
-		nTimeStampToRemove = -2;
-		// Make one buffer free for next readahead (except when bRemoveAlsoActiveRequests)
-		int nMaxListSize = bRemoveAlsoActiveRequests ? (unsigned int)m_nNumBuffers : (unsigned int)m_nNumBuffers - 1;
-		if (m_requestList.size() > (unsigned int)nMaxListSize) {
-			// remove element with smallest timestamp
-			if (nSmallestTimeStamp < INT_MAX) {
-				bRemoved = true;
-				nTimeStampToRemove = nSmallestTimeStamp;
-			}
-		}
-	} while (bRemoved); // repeat until no element could be removed anymore
+	} while (bRemoved); // repeat until no element was removed anymore
 }
 
-void CJPEGProvider::ClearOldestInactiveRequest() {
+void CJPEGProvider::MarkOldestRequestsAsInactive() {
 	if (m_requestList.size() >= (unsigned int)m_nNumBuffers) {
 		int nFirstHandle = INT_MAX;
 		CImageRequest* pFirstRequest = NULL;
 		std::list<CImageRequest*>::iterator iter;
-		for (iter = m_requestList.begin( ); iter != m_requestList.end( ); iter++ ) {
+		for (iter = m_requestList.begin(); iter != m_requestList.end(); iter++) {
 			if ((*iter)->IsActive) {
 				// mark very old requests for removal
 				if (CImageLoadThread::GetCurHandleValue() - (*iter)->Handle > m_nNumBuffers) {
@@ -342,7 +370,7 @@ void CJPEGProvider::ClearOldestInactiveRequest() {
 		}
 		if (pFirstRequest != NULL) {
 			pFirstRequest->IsActive = false;
-			ClearOldestInactiveRequest();
+			MarkOldestRequestsAsInactive();
 		}
 	}
 }

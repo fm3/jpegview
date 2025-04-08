@@ -1,6 +1,7 @@
 #pragma once
 
 #include "PanelController.h"
+#include "EXIFReader.h"
 
 class CEXIFDisplay;
 
@@ -11,21 +12,26 @@ public:
 	CEXIFDisplayCtl(CMainDlg* pMainDlg, CPanel* pImageProcPanel);
 	virtual ~CEXIFDisplayCtl();
 
-	virtual float DimFactor() { return 0.5f; }
+	virtual float DimFactor() { return 0.65f; }
 
 	virtual bool IsVisible();
 	virtual bool IsActive() { return m_bVisible; }
+	virtual bool GetShowHistogram() { return m_bShowHistogram; }
 
 	virtual void SetVisible(bool bVisible);
 	virtual void SetActive(bool bActive);
+	virtual void SetShowHistogram(bool bShowHistogram);
 
 	virtual void AfterNewImageLoaded();
 
 	virtual bool OnMouseMove(int nX, int nY);
 	virtual void OnPrePaintMainDlg(HDC hPaintDC);
 
+	virtual CString CEXIFDisplayCtl::FormatRational(Rational rational);
+
 private:
 	bool m_bVisible;
+	bool m_bShowHistogram;
 	CEXIFDisplay* m_pEXIFDisplay;
 	CPanel* m_pImageProcPanel;
 	int m_nFileNameHeight;

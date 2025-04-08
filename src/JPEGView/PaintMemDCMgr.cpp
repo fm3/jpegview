@@ -3,8 +3,10 @@
 #include "EXIFDisplay.h"
 #include "SettingsProvider.h"
 #include "PaintMemDCMgr.h"
+#include "MainDlg.h"
 
-CPaintMemDCMgr::CPaintMemDCMgr(CPaintDC& paintDC) : m_paintDC(paintDC) {
+CPaintMemDCMgr::CPaintMemDCMgr(CMainDlg* pMainDlg, CPaintDC& paintDC) : m_paintDC(paintDC) {
+	m_pMainDlg = pMainDlg;
 	m_nNumElems = 0;
 	for (int i = 0; i < MAX_REGIONS_CPaintMemDCMgr; i++) {
 		m_managedRegions[i].MemoryDC = CDC();
@@ -37,9 +39,9 @@ void CPaintMemDCMgr::IncludeIntoClippingRegion(CDC & paintDC, const std::list<CR
 	}
 }
 
-HBITMAP CPaintMemDCMgr::PrepareRectForMemDCPainting(CDC & memDC, CDC & paintDC, const CRect& rect) {
+HBITMAP CPaintMemDCMgr::PrepareRectForMemDCPainting(CDC & memDC, CDC & paintDC, const CRect& rect, const bool isFullscreen) {
 	CBrush backBrush;
-	backBrush.CreateSolidBrush(CSettingsProvider::This().ColorBackground());
+	backBrush.CreateSolidBrush(CSettingsProvider::This().ColorBackground(isFullscreen));
 
 	// Create a memory DC of correct size
 	CBitmap memDCBitmap = CBitmap();
@@ -113,7 +115,7 @@ CRect CPaintMemDCMgr::CreatePanelRegion(CPanel* pPanel, float fDimFactor, bool b
 	m_managedRegions[m_nNumElems].DisplayRegion = pPanel;
 	m_managedRegions[m_nNumElems].DimFactor = fDimFactor;
 	m_managedRegions[m_nNumElems].Blend = bBlendPanel;
-	m_managedRegions[m_nNumElems].OffscreenBitmap = PrepareRectForMemDCPainting(m_managedRegions[m_nNumElems].MemoryDC, m_paintDC, displayRect);
+	m_managedRegions[m_nNumElems].OffscreenBitmap = PrepareRectForMemDCPainting(m_managedRegions[m_nNumElems].MemoryDC, m_paintDC, displayRect, m_pMainDlg->IsFullScreenMode());
 
 	m_nNumElems++;
 	return displayRect;
