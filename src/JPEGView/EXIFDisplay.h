@@ -67,7 +67,6 @@ private:
 	int m_nTitleWidth;
 	int m_nTitleHeight;
 	int m_nPrefixLength;
-	CSize m_nNoHistogramSize;
 	CPoint m_pos;
 	CSize m_size;
 	HFONT m_hTitleFont;
@@ -78,7 +77,5 @@ private:
 	std::list<TextLine> m_lines;
 	const CHistogram* m_pHistogram;
 	bool m_titleIsSingleLine;
-
-	void PaintHistogram(CDC & dc, int nXStart, int nYBaseLine);
 
 };

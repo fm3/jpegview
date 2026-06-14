@@ -2,11 +2,9 @@
 #include "EXIFDisplay.h"
 #include "Helpers.h"
 #include "HelpersGUI.h"
-#include "HistogramCorr.h"
 #include "NLS.h"
 #include <math.h>
 
-#define HISTOGRAM_HEIGHT 50
 #define MAX_WIDTH 320
 #define PREFIX_GAP 10
 
@@ -21,7 +19,6 @@ static LPTSTR CopyStrAlloc(LPCTSTR str) {
 }
 
 CEXIFDisplay::CEXIFDisplay(HWND hWnd, INotifiyMouseCapture* pNotifyMouseCapture) : CPanel(hWnd, pNotifyMouseCapture, false, true) {
-	m_bShowHistogram = false;
 	m_nGap = (int)(m_fDPIScale * 10);
 	m_nTab1 = 0;
 	m_nLineHeight = 0;
@@ -33,8 +30,6 @@ CEXIFDisplay::CEXIFDisplay(HWND hWnd, INotifiyMouseCapture* pNotifyMouseCapture)
 	m_sComment = NULL;
 	m_nCommentHeight = 0;
 	m_hTitleFont = 0;
-	m_nNoHistogramSize = CSize(0, 0);
-	m_pHistogram = NULL;
 
 	CURLCtrl* pLinkLocation = AddURL(ID_urlLocation, _T(""), _T(""), false);
 	pLinkLocation->SetShow(false, false);
@@ -96,7 +91,7 @@ void CEXIFDisplay::SetGPSLocation(LPCTSTR sLocation, LPCTSTR sURL) {
 }
 
 void CEXIFDisplay::AddLine(LPCTSTR sDescription, LPCTSTR sValue, bool valueIsURL, bool sameLine) {
-	m_lines.push_back(TextLine(CopyStrAlloc(sDescription), CopyStrAlloc(sValue), valueIsURL, sameLine && !m_bShowHistogram));
+	m_lines.push_back(TextLine(CopyStrAlloc(sDescription), CopyStrAlloc(sValue), valueIsURL, sameLine));
 }
 
 void CEXIFDisplay::AddLine(LPCTSTR sDescription, double dValue, int nDigits) {
@@ -197,7 +192,7 @@ CRect CEXIFDisplay::PanelRect() {
 			if (!(iter->SameLine)) {
 				nLineCountExcludingSameLineLines += 1;
 			}
-			if (iter->Desc != NULL && m_bShowHistogram) {
+			if (iter->Desc != NULL) {
 				::GetTextExtentPoint32(dc, iter->Desc, (int)_tcslen(iter->Desc), &size);
 				m_nLineHeight = max(m_nLineHeight, size.cy);
 				nMaxLengthColumn1 = max(nMaxLengthColumn1, size.cx);
@@ -214,16 +209,12 @@ CRect CEXIFDisplay::PanelRect() {
 		}
 
 		int nNeededWidthNoBorders = max(nTitleLength, nMaxLengthColumn1 + nMaxLengthColumn2 + m_nGap);
-		int nExpansionX = 0, nExpansionY = 0;
-		if (m_bShowHistogram) {
-			nExpansionX = max(0, HelpersGUI::ScaleToScreen(256) - nNeededWidthNoBorders);
-			nExpansionY = HelpersGUI::ScaleToScreen(HISTOGRAM_HEIGHT) + m_nGap;
-		}
+		
 
 
 
-		m_size = CSize(nNeededWidthNoBorders + m_nGap*2 + nExpansionX, 
-			m_nTitleHeight + nLineCountExcludingSameLineLines*m_nLineHeight + m_nGap * 2 + nExpansionY);
+		m_size = CSize(nNeededWidthNoBorders + m_nGap*2, 
+			m_nTitleHeight + nLineCountExcludingSameLineLines*m_nLineHeight + m_nGap * 2);
 
 		if (m_sComment != NULL) {
 			CRect rectComment(0, 0, m_size.cx - m_nGap*2, HelpersGUI::ScaleToScreen(200));
@@ -232,11 +223,7 @@ CRect CEXIFDisplay::PanelRect() {
 			m_size.cy += (m_nGap >> 1) + m_nCommentHeight;
 		}
 
-		m_nNoHistogramSize = CSize(m_size.cx - nExpansionX, m_size.cy - nExpansionY);
 		m_nTab1 = nMaxLengthColumn1 + m_nGap;
-		if (!m_bShowHistogram) {
-			m_nTab1 = 0;
-		}
 	}
 	return CRect(m_pos, m_size);
 }
@@ -291,54 +278,27 @@ void CEXIFDisplay::OnPaint(CDC & dc, const CPoint& offset) {
 		if (iter->SameLine) {
 			nRunningY -= m_nLineHeight;
 		}
-		if (iter->Desc != NULL && m_bShowHistogram) {
+		if (iter->Desc != NULL) {
 			::TextOut(dc, nX + m_nGap, nRunningY, iter->Desc, (int)_tcslen(iter->Desc));
 		}
 		if (iter->Value != NULL) {
+			int xPos = nX + m_nGap;
+			if (iter->Desc != NULL) {
+				xPos += m_nTab1;
+			}
 			if (iter->ValueIsURL) {
 				pLinkLocation->SetShow(isLinkLocationShown, false);
-				pLinkLocation->SetPosition(CRect(CPoint(nX + m_nGap + m_nTab1 - offset.x, nRunningY - offset.y), pLinkLocation->GetMinSize()));
+				pLinkLocation->SetPosition(CRect(CPoint(xPos - offset.x, nRunningY - offset.y), pLinkLocation->GetMinSize()));
 				if (isLinkLocationShown) pLinkLocation->OnPaint(dc, offset);
 				::SetTextColor(dc, RGB(243, 242, 231));
 				HelpersGUI::SelectDefaultGUIFont(dc);
 			} else {
-				::TextOut(dc, nX + m_nGap + m_nTab1, nRunningY, iter->Value, (int)_tcslen(iter->Value));
+				::TextOut(dc, xPos, nRunningY, iter->Value, (int)_tcslen(iter->Value));
 			}
 		}
 		nRunningY += m_nLineHeight;
 	}
 
-	if (m_bShowHistogram) {
-		::SelectObject(dc, ::GetStockObject(WHITE_PEN));
-		int nHistogramYBase = nY + m_size.cy - m_nGap;
-		int nHistogramXBase = nX + (m_size.cx - HelpersGUI::ScaleToScreen(256)) / 2;
-		dc.MoveTo(nHistogramXBase, nHistogramYBase);
-		dc.LineTo(nHistogramXBase + HelpersGUI::ScaleToScreen(256), nHistogramYBase);
-		if (m_pHistogram != NULL) {
-			PaintHistogram(dc, nHistogramXBase, nHistogramYBase);
-		}
-	}
-}
-
-void CEXIFDisplay::PaintHistogram(CDC & dc, int nXStart, int nYBaseLine) {
-	const int* pChannelGrey = m_pHistogram->GetChannelGrey();
-	int nMaxValue = 0;
-	for (int i = 0; i < 256; i++) {
-		nMaxValue = max(pChannelGrey[i], nMaxValue);
-	}
-	double dScaling = (nMaxValue == 0) ? 0.0f : HelpersGUI::ScaleToScreen(HISTOGRAM_HEIGHT) / sqrt((double)nMaxValue);
-
-	HPEN hPen = ::CreatePen(PS_SOLID, 1, RGB(190, 190, 170));
-	HGDIOBJ hOldPen = ::SelectObject(dc, hPen);
-	int length = HelpersGUI::ScaleToScreen(256);
-	float reductionFactor = 256.0f / length;
-	for (int i = 0; i < length; i++) {
-		int nLineHeight = (int)(sqrt((double)pChannelGrey[(int)(i * reductionFactor)]) * dScaling + 0.5);
-		dc.MoveTo(nXStart + i, nYBaseLine - nLineHeight);
-		dc.LineTo(nXStart + i, nYBaseLine);
-	}
-	::SelectObject(dc, hOldPen);
-	::DeleteObject(hPen);
 }
 
 void CEXIFDisplay::RepositionAll() {
