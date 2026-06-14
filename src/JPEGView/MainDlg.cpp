@@ -1704,9 +1704,38 @@ void CMainDlg::ExecuteCommand(int nCommand) {
 						sConfirmMsg, CNLS::GetString(_T("Confirm")), MB_OKCANCEL | icon);
 				}
 				if (bPerformTransformation) {
+					CJPEGLosslessTransform::ETransformation transformation = HelpersGUI::CommandIdToLosslessTransformation(nCommand);
+					bool bClearEXIFOrientation = false;
+					// If the image is displayed with an EXIF rotation, compose the raw-pixel transform
+					// so that the visual result equals the requested rotation of the displayed image,
+					// then clear the EXIF orientation tag so the result displays correctly without it.
+					if (m_pCurrentImage->IsRotationByEXIF() &&
+						m_pCurrentImage->GetEXIFReader() != NULL &&
+						m_pCurrentImage->GetEXIFReader()->ImageOrientationPresent()) {
+						int nEXIF = m_pCurrentImage->GetEXIFReader()->GetImageOrientation();
+						// Convert EXIF orientation to rotation degrees (only the 4 pure-rotation values matter)
+						int exifDeg = (nEXIF == 3) ? 180 : (nEXIF == 6) ? 90 : (nEXIF == 8) ? 270 : 0;
+						using T = CJPEGLosslessTransform;
+						if (transformation == T::Rotate90 || transformation == T::Rotate180 || transformation == T::Rotate270) {
+							int reqDeg = (transformation == T::Rotate90) ? 90 : (transformation == T::Rotate180) ? 180 : 270;
+							switch ((exifDeg + reqDeg) % 360) {
+								case  90: transformation = T::Rotate90;  break;
+								case 180: transformation = T::Rotate180; break;
+								case 270: transformation = T::Rotate270; break;
+								default:  transformation = T::NoTransformation; break;
+							}
+						} else if (transformation == T::MirrorH || transformation == T::MirrorV) {
+							switch (nEXIF) {
+								case 3: transformation = (transformation == T::MirrorH) ? T::MirrorV    : T::MirrorH;    break;
+								case 6: transformation = (transformation == T::MirrorH) ? T::Transpose  : T::Transverse; break;
+								case 8: transformation = (transformation == T::MirrorH) ? T::Transverse : T::Transpose;  break;
+							}
+						}
+						bClearEXIFOrientation = true;
+					}
 					CString sTransformError;
 					CJPEGLosslessTransform::EResult eResult =
-						CJPEGLosslessTransform::PerformTransformation(m_pFileList->Current(), m_pFileList->Current(), HelpersGUI::CommandIdToLosslessTransformation(nCommand), bCrop || sp.CropWithoutPromptLosslessJPEG(), &sTransformError);
+						CJPEGLosslessTransform::PerformTransformation(m_pFileList->Current(), m_pFileList->Current(), transformation, bCrop || sp.CropWithoutPromptLosslessJPEG(), bClearEXIFOrientation, &sTransformError);
 					if (eResult != CJPEGLosslessTransform::Success) {
 						CString sMsg = CString(CNLS::GetString(_T("Performing the lossless transformation failed!"))) +
 							_T("\n") + CNLS::GetString(_T("Reason:")) + _T(" ") + HelpersGUI::LosslessTransformationResultToString(eResult);
