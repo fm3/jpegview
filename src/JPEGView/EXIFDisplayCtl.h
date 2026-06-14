@@ -24,7 +24,6 @@ public:
 
 	virtual void AfterNewImageLoaded();
 
-	virtual bool OnMouseMove(int nX, int nY);
 	virtual void OnPrePaintMainDlg(HDC hPaintDC);
 
 	virtual CString CEXIFDisplayCtl::FormatRational(Rational rational);
@@ -37,6 +36,4 @@ private:
 	int m_nFileNameHeight;
 
 	void FillEXIFDataDisplay();
-	static void OnShowHistogram(void* pContext, int nParameter, CButtonCtrl & sender);
-	static void OnClose(void* pContext, int nParameter, CButtonCtrl & sender);
 };

@@ -6,7 +6,6 @@
 #include "NLS.h"
 #include <math.h>
 
-#define BUTTON_SIZE 18
 #define HISTOGRAM_HEIGHT 50
 #define MAX_WIDTH 320
 #define PREFIX_GAP 10
@@ -19,13 +18,6 @@ static LPTSTR CopyStrAlloc(LPCTSTR str) {
 	TCHAR* pNewStr = new TCHAR[nLen + 1];
 	_tcscpy_s(pNewStr, nLen + 1, str);
 	return pNewStr;
-}
-
-static CRect InflateRect(const CRect& rect, float fAmount) {
-	CRect r(rect);
-	int nAmount = (int)(fAmount * r.Width());
-	r.InflateRect(-nAmount, -nAmount);
-	return r;
 }
 
 CEXIFDisplay::CEXIFDisplay(HWND hWnd, INotifiyMouseCapture* pNotifyMouseCapture) : CPanel(hWnd, pNotifyMouseCapture, false, true) {
@@ -44,10 +36,6 @@ CEXIFDisplay::CEXIFDisplay(HWND hWnd, INotifiyMouseCapture* pNotifyMouseCapture)
 	m_nNoHistogramSize = CSize(0, 0);
 	m_pHistogram = NULL;
 
-	LPCTSTR nullTooltip = NULL; // Needed because passing NULL directly to overloaded function makes it ambiguous
-
-	AddUserPaintButton(ID_btnShowHideHistogram, nullTooltip, &PaintShowHistogramBtn, NULL, this, this);
-	AddUserPaintButton(ID_btnClose, nullTooltip, &PaintCloseBtn, NULL, this, this);
 	CURLCtrl* pLinkLocation = AddURL(ID_urlLocation, _T(""), _T(""), false);
 	pLinkLocation->SetShow(false, false);
 }
@@ -225,9 +213,7 @@ CRect CEXIFDisplay::PanelRect() {
 			}
 		}
 
-		int nButtonWidth = (int)(m_fDPIScale * BUTTON_SIZE);
-		int columnGap = m_bShowHistogram ? m_nGap : 0;
-		int nNeededWidthNoBorders = max(max(nTitleLength, nMaxLengthColumn1 + nMaxLengthColumn2 + m_nGap), nMaxLengthColumn1 + columnGap + nLastLineLengthColumn2 + m_nGap/2 + nButtonWidth);
+		int nNeededWidthNoBorders = max(nTitleLength, nMaxLengthColumn1 + nMaxLengthColumn2 + m_nGap);
 		int nExpansionX = 0, nExpansionY = 0;
 		if (m_bShowHistogram) {
 			nExpansionX = max(0, HelpersGUI::ScaleToScreen(256) - nNeededWidthNoBorders);
@@ -356,76 +342,8 @@ void CEXIFDisplay::PaintHistogram(CDC & dc, int nXStart, int nYBaseLine) {
 }
 
 void CEXIFDisplay::RepositionAll() {
-	CRect panelRect = PanelRect();
-
-	CUICtrl* pButton = GetControl(ID_btnShowHideHistogram);
-	if (pButton != NULL) {
-		int nButtonSize = (int)(m_fDPIScale * BUTTON_SIZE);
-		pButton->SetPosition(CRect(CPoint(panelRect.left + m_nNoHistogramSize.cx - m_nGap - nButtonSize, panelRect.top + m_nNoHistogramSize.cy - m_nGap - nButtonSize), CSize(nButtonSize, nButtonSize)));
-	}
-	CUICtrl* pButtonClose = GetControl(ID_btnClose);
-	if (pButtonClose != NULL) {
-		int nButtonSize = (int)(m_fDPIScale * BUTTON_SIZE * 0.9f);
-		pButtonClose->SetPosition(CRect(CPoint(panelRect.right - nButtonSize, panelRect.top), CSize(nButtonSize, nButtonSize)));
-	}
+	PanelRect();
 }
 
-static void PaintShowHistogramBtnOnePass(CDC& dc, const CRect& r, bool bArrowDown) {
-	CPoint p1(r.left + 1, r.top + 1);
-	CPoint p2(r.right, r.top);
-	int nMiddleX = (r.left + r.right) / 2;
-	CPoint p3(nMiddleX, r.top + (r.right - r.left) / 2);
-	if (bArrowDown) {
-		dc.MoveTo(CPoint(p1.x, p3.y));
-		dc.LineTo(CPoint(p3.x, p1.y));
-		dc.MoveTo(CPoint(p3.x, p1.y));
-		dc.LineTo(CPoint(p2.x, p3.y + 1));
-	} else {
-		dc.MoveTo(p1);
-		dc.LineTo(p3);
-		dc.MoveTo(p3);
-		dc.LineTo(p2);
-	}
-}
-
-void CEXIFDisplay::PaintShowHistogramBtn(void* pContext, const CRect& rect, CDC& dc) {
-	CEXIFDisplay* pThis = (CEXIFDisplay*)pContext;
-	CRect r = InflateRect(rect, 0.3f);
-	r.OffsetRect(CPoint(0, 1));
-	PaintShowHistogramBtnOnePass(dc, r, pThis->GetShowHistogram());
-	if (HelpersGUI::ScreenScaling >= 2) {
-		r.OffsetRect(0, 1);
-		PaintShowHistogramBtnOnePass(dc, r, pThis->GetShowHistogram());
-	}
-}
-
-static void PaintCloseBtnOnePass(CDC& dc, const CRect& r) {
-	CPoint p1(r.left + 1, r.top + 1);
-	dc.MoveTo(p1);
-	CPoint p2(r.right, r.bottom);
-	dc.LineTo(p2);
-	CPoint p3(r.right - 1, r.top + 1);
-	dc.MoveTo(p3);
-	CPoint p4(r.left, r.bottom);
-	dc.LineTo(p4);
-}
-
-void CEXIFDisplay::PaintCloseBtn(void* pContext, const CRect& rect, CDC& dc) {
-	CRect r = Helpers::InflateRect(rect, 0.25f);
-	PaintCloseBtnOnePass(dc, r);
-	if (HelpersGUI::ScreenScaling >= 2) {
-		r.OffsetRect(0, 1);
-		PaintCloseBtnOnePass(dc, r);
-	}
-}
-
-LPCTSTR CEXIFDisplay::ShowHistogramTooltip(void* pContext) {
-	CEXIFDisplay* pThis = (CEXIFDisplay*)pContext;
-	if (pThis->GetShowHistogram()) {
-		return CNLS::GetString(_T("Hide histogram"));
-	} else {
-		return CNLS::GetString(_T("Show histogram"));
-	}
-}
 
 
