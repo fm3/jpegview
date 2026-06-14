@@ -1684,7 +1684,7 @@ void CMainDlg::ExecuteCommand(int nCommand) {
 				bool bCanTransformWithoutCrop = m_pCurrentImage->CanUseLosslessJPEGTransformations();
 				bool bAskConfirm = !(bCanTransformWithoutCrop ||sp.CropWithoutPromptLosslessJPEG()) || nCommand == IDM_ROTATE_90_LOSSLESS_CONFIRM || nCommand == IDM_ROTATE_270_LOSSLESS_CONFIRM;
 				bool bPerformTransformation = true;
-				bool bCrop = false;
+				bool bCrop = !bCanTransformWithoutCrop;
 				MouseOn();
 				if (bAskConfirm) {
 					CString sLosslessOrCropMessage;
@@ -1704,12 +1704,16 @@ void CMainDlg::ExecuteCommand(int nCommand) {
 						sConfirmMsg, CNLS::GetString(_T("Confirm")), MB_OKCANCEL | icon);
 				}
 				if (bPerformTransformation) {
+					CString sTransformError;
 					CJPEGLosslessTransform::EResult eResult =
-						CJPEGLosslessTransform::PerformTransformation(m_pFileList->Current(), m_pFileList->Current(), HelpersGUI::CommandIdToLosslessTransformation(nCommand), bCrop || sp.CropWithoutPromptLosslessJPEG());
+						CJPEGLosslessTransform::PerformTransformation(m_pFileList->Current(), m_pFileList->Current(), HelpersGUI::CommandIdToLosslessTransformation(nCommand), bCrop || sp.CropWithoutPromptLosslessJPEG(), &sTransformError);
 					if (eResult != CJPEGLosslessTransform::Success) {
-						::MessageBox(m_hWnd, CString(CNLS::GetString(_T("Performing the lossless transformation failed!"))) +
-							_T("\n") + CNLS::GetString(_T("Reason:")) + _T(" ") + HelpersGUI::LosslessTransformationResultToString(eResult),
-							CNLS::GetString(_T("Lossless JPEG transformations")), MB_OK | MB_ICONERROR);
+						CString sMsg = CString(CNLS::GetString(_T("Performing the lossless transformation failed!"))) +
+							_T("\n") + CNLS::GetString(_T("Reason:")) + _T(" ") + HelpersGUI::LosslessTransformationResultToString(eResult);
+						if (!sTransformError.IsEmpty()) {
+							sMsg += _T("\n") + sTransformError;
+						}
+						::MessageBox(m_hWnd, sMsg, CNLS::GetString(_T("Lossless JPEG transformations")), MB_OK | MB_ICONERROR);
 					} else {
 						ReloadImage(false); // reload current image
 					}

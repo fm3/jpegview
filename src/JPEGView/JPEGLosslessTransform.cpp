@@ -3,25 +3,25 @@
 #include "Helpers.h"
 #include "libjpeg-turbo\include\turbojpeg.h"
 
-CJPEGLosslessTransform::EResult _DoTransformation(LPCTSTR sInputFile, LPCTSTR sOutputFile, tjtransform &transform);
+CJPEGLosslessTransform::EResult _DoTransformation(LPCTSTR sInputFile, LPCTSTR sOutputFile, tjtransform &transform, CString* psErrorDetails);
 unsigned char* _ReadFile(LPCTSTR sFileName, unsigned int & nLengthBytes);
 bool _WriteFile(LPCTSTR sFileName, unsigned char* pBuffer, unsigned int nLengthBytes);
 int _TransformationEnumToOpCode(CJPEGLosslessTransform::ETransformation transformation);
 
 // Performs a lossless JPEG transformation, transforming the input file and writing the result to the output file.
 // Input and output file can be identical, then the input file is overwritten by the resulting output file.
-CJPEGLosslessTransform::EResult CJPEGLosslessTransform::PerformTransformation(LPCTSTR sInputFile, LPCTSTR sOutputFile, 
-	CJPEGLosslessTransform::ETransformation transformation, bool bAllowTrim) {
+CJPEGLosslessTransform::EResult CJPEGLosslessTransform::PerformTransformation(LPCTSTR sInputFile, LPCTSTR sOutputFile,
+	CJPEGLosslessTransform::ETransformation transformation, bool bAllowTrim, CString* psErrorDetails) {
 	tjtransform transform{ 0 };
 	transform.op = _TransformationEnumToOpCode(transformation);
 	transform.options = bAllowTrim ? TJXOPT_TRIM : TJXOPT_PERFECT;
 
-	return _DoTransformation(sInputFile, sOutputFile, transform);
+	return _DoTransformation(sInputFile, sOutputFile, transform, psErrorDetails);
 }
 
 // Performs a lossless JPEG crop, using the input file and writing the result to the output file.
 // Input and output file can be identical, then the input file is overwritten by the resulting output file.
-CJPEGLosslessTransform::EResult CJPEGLosslessTransform::PerformCrop(LPCTSTR sInputFile, LPCTSTR sOutputFile, const CRect& cropRect) {
+CJPEGLosslessTransform::EResult CJPEGLosslessTransform::PerformCrop(LPCTSTR sInputFile, LPCTSTR sOutputFile, const CRect& cropRect, CString* psErrorDetails) {
 	tjtransform transform{ 0 };
 	transform.op = TJXOP_NONE;
 	transform.options = TJXOPT_PERFECT | TJXOPT_CROP;
@@ -30,11 +30,11 @@ CJPEGLosslessTransform::EResult CJPEGLosslessTransform::PerformCrop(LPCTSTR sInp
 	transform.r.w = cropRect.Width();
 	transform.r.h = cropRect.Height();
 
-	return _DoTransformation(sInputFile, sOutputFile, transform);
+	return _DoTransformation(sInputFile, sOutputFile, transform, psErrorDetails);
 }
 
 
-static CJPEGLosslessTransform::EResult _DoTransformation(LPCTSTR sInputFile, LPCTSTR sOutputFile, tjtransform &transform) {
+static CJPEGLosslessTransform::EResult _DoTransformation(LPCTSTR sInputFile, LPCTSTR sOutputFile, tjtransform &transform, CString* psErrorDetails) {
 	CJPEGLosslessTransform::EResult eResult = CJPEGLosslessTransform::Success;
 
 	tjhandle hTransform = tj3Init(TJINIT_TRANSFORM);
@@ -49,6 +49,9 @@ static CJPEGLosslessTransform::EResult _DoTransformation(LPCTSTR sInputFile, LPC
 				eResult = CJPEGLosslessTransform::WriteFileFailed;
 			}
 		} else {
+			if (psErrorDetails != nullptr) {
+				*psErrorDetails = CString(tj3GetErrorStr(hTransform));
+			}
 			eResult = CJPEGLosslessTransform::TransformationFailed;
 		}
 		if (pOutputJPEGBytes != NULL) {

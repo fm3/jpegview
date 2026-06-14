@@ -598,11 +598,15 @@ void CCropCtl::CropLossless() {
 	if (IDOK == fileDlg.DoModal(m_pMainDlg->GetHWND())) {
 		LPCTSTR sInputFileName = m_pMainDlg->CurrentFileName(false);
 		LPCTSTR sCropFileName = fileDlg.m_szFileName;
-		CJPEGLosslessTransform::EResult eResult = CJPEGLosslessTransform::PerformCrop(sInputFileName, sCropFileName, cropRect);
+		CString sTransformError;
+		CJPEGLosslessTransform::EResult eResult = CJPEGLosslessTransform::PerformCrop(sInputFileName, sCropFileName, cropRect, &sTransformError);
 		if (eResult != CJPEGLosslessTransform::Success) {
-			::MessageBox(m_pMainDlg->GetHWND(), CString(CNLS::GetString(_T("Performing the lossless transformation failed!"))) + 
-				+ _T("\n") + CNLS::GetString(_T("Reason:")) + _T(" ") + HelpersGUI::LosslessTransformationResultToString(eResult),
-				CNLS::GetString(_T("Lossless JPEG transformations")), MB_OK | MB_ICONWARNING);
+			CString sMsg = CString(CNLS::GetString(_T("Performing the lossless transformation failed!"))) +
+				_T("\n") + CNLS::GetString(_T("Reason:")) + _T(" ") + HelpersGUI::LosslessTransformationResultToString(eResult);
+			if (!sTransformError.IsEmpty()) {
+				sMsg += _T("\n") + sTransformError;
+			}
+			::MessageBox(m_pMainDlg->GetHWND(), sMsg, CNLS::GetString(_T("Lossless JPEG transformations")), MB_OK | MB_ICONWARNING);
 		} else {
 			if (_tcscmp(sInputFileName, sCropFileName) == 0) {
 				m_pMainDlg->ExecuteCommand(IDM_RELOAD);
