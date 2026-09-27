@@ -1513,6 +1513,10 @@ void CMainDlg::ExecuteCommand(int nCommand) {
 		case IDM_LAST:
 			GotoImage(POS_Last);
 			break;
+		case IDM_NEXT_FRAME:
+		case IDM_PREV_FRAME:
+			GotoImage((nCommand == IDM_NEXT_FRAME) ? POS_NextFrame : POS_PrevFrame, KEEP_PARAMETERS);
+			break;
 		case IDM_LOOP_FOLDER:
 		case IDM_LOOP_RECURSIVELY:
 		case IDM_LOOP_SIBLINGS:
@@ -2593,6 +2597,16 @@ void CMainDlg::GotoImage(EImagePosition ePos, int nFlags) {
 		case POS_NextSlideShow:
 			m_pFileList = m_pFileList->Next();
 			break;
+		case POS_NextFrame:
+		case POS_PrevFrame:
+			// step through the frames of the current image, wrapping around, but never switch to another image
+			nFrameIndex = nOldFrameIndex;
+			if (m_pCurrentImage != NULL && m_pCurrentImage->NumberOfFrames() > 1) {
+				int nNumFrames = m_pCurrentImage->NumberOfFrames();
+				nFrameIndex = (nOldFrameIndex + ((ePos == POS_NextFrame) ? 1 : nNumFrames - 1)) % nNumFrames;
+			}
+			bNoWrapAroundEdgeFrame = false;
+			break;
 		case POS_Previous:
 			{
 				bool bGotoPrevImage;
@@ -2679,7 +2693,8 @@ void CMainDlg::GotoImage(EImagePosition ePos, int nFlags) {
 	AfterNewImageLoaded(bSynchronize, false, minimalDisplayTime > 0);
 
 	// if it is an animation (currently only animated GIF) start movie automatically
-	if (m_pCurrentImage != NULL && m_pCurrentImage->IsAnimation()) {
+	// (except when stepping through frames manually)
+	if (m_pCurrentImage != NULL && m_pCurrentImage->IsAnimation() && ePos != POS_NextFrame && ePos != POS_PrevFrame) {
 		if (m_bIsAnimationPlaying) {
 			AdjustAnimationFrameTime();
 		} else {

@@ -170,6 +170,8 @@
 #define IDM_PREV			5000		// :KeyMap: go to previous image
 #define IDM_FIRST			5100		// :KeyMap: go to first image
 #define IDM_LAST			5200		// :KeyMap: go to last image
+#define IDM_NEXT_FRAME		5300		// :KeyMap: stop animation and go to next frame
+#define IDM_PREV_FRAME		5310		// :KeyMap: stop animation and go to previous frame
 #define IDM_LOOP_FOLDER		6000		// :KeyMap: set navigation mode loop through folder
 #define IDM_LOOP_RECURSIVELY 6010		// :KeyMap: set navigation mode loop through folder and subfolders
 #define IDM_LOOP_SIBLINGS	6020		// :KeyMap: set navigation mode loop through folders on same level

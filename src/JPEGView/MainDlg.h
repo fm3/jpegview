@@ -49,6 +49,8 @@ public:
 		POS_Next,
 		POS_NextSlideShow,
 		POS_NextAnimation,
+		POS_NextFrame,
+		POS_PrevFrame,
 		POS_Previous,
 		POS_Current,
 		POS_Clipboard,

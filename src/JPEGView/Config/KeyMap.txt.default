@@ -12,6 +12,8 @@ Ctrl+Left               IDM_TOGGLE
 Ctrl+Right              IDM_TOGGLE
 Home                    IDM_FIRST
 End                     IDM_LAST
+Comma                   IDM_PREV_FRAME
+Period                  IDM_NEXT_FRAME
 Del                     IDM_MOVE_TO_RECYCLE_BIN_CONFIRM
 Plus                    IDM_ZOOM_INC
 Ctrl+Shift+Plus         IDM_CONTRAST_CORRECTION_INC
